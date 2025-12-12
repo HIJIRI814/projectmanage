@@ -1,3 +1,4 @@
+import { computed } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { storeToRefs } from 'pinia';
 import { UserType } from '~/domain/user/model/UserType';

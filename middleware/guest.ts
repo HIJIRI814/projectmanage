@@ -4,15 +4,15 @@ export default defineNuxtRouteMiddleware((to, from) => {
     const accessTokenCookie = useCookie('accessToken');
     
     if (accessTokenCookie.value) {
-      // 既にログイン済みの場合はダッシュボードへリダイレクト
-      return navigateTo('/dashboard');
+      // 既にログイン済みの場合はプロジェクト一覧へリダイレクト
+      return navigateTo('/projects');
     }
   } else {
     // クライアントサイドではストアの状態をチェック
     const { isAuthenticated } = useAuth();
 
     if (isAuthenticated.value) {
-      return navigateTo('/dashboard');
+      return navigateTo('/projects');
     }
   }
 });

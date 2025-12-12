@@ -119,14 +119,14 @@ describe('Login.vue', () => {
   });
 
   describe('authentication redirect', () => {
-    it('should redirect to dashboard when authenticated', async () => {
+    it('should redirect to projects when authenticated', async () => {
       mockAuth.isAuthenticated.value = true;
       const wrapper = mount(Login);
 
       // watchが実行されるまで待つ
       await wrapper.vm.$nextTick();
 
-      expect(mockPush).toHaveBeenCalledWith('/dashboard');
+      expect(mockPush).toHaveBeenCalledWith('/projects');
     });
 
     it('should not redirect when not authenticated', () => {

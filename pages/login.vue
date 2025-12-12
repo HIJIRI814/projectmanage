@@ -51,7 +51,7 @@ const password = ref('');
 const handleLogin = async () => {
   try {
     await login(email.value, password.value);
-    await router.push('/dashboard');
+    await router.push('/projects');
   } catch (err) {
     // エラーはストアで管理されているので、ここでは何もしない
     console.error('Login error:', err);

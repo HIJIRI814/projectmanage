@@ -33,6 +33,9 @@ globalThis.useRoute = vi.fn(() => ({
 globalThis.navigateTo = vi.fn();
 globalThis.useFetch = vi.fn();
 globalThis.definePageMeta = vi.fn();
+globalThis.useCookie = vi.fn((name: string, options?: any) => {
+  return ref<string | null>(null);
+});
 
 // useAuthをモック（テストファイルで上書き可能）
 globalThis.useAuth = vi.fn(() => ({
