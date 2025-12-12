@@ -39,6 +39,7 @@ export class LoginUser {
       id: user.id,
       email: user.email.toString(),
       name: user.name,
+      userType: user.userType.toNumber(),
     });
   }
 }

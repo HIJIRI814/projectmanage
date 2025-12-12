@@ -1,0 +1,129 @@
+import { useAuthStore } from '~/stores/auth';
+
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:9',message:'admin middleware entry',data:{to:to.path,from:from.path,isServer:process.server},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  if (process.server) {
+    // SSR時はクッキーからトークンをチェック
+    const accessTokenCookie = useCookie('accessToken');
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:15',message:'SSR token check',data:{hasToken:!!accessTokenCookie.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    if (!accessTokenCookie.value) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:18',message:'SSR no token redirect',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      return navigateTo('/login');
+    }
+
+    try {
+      const { JwtService } = await import('../infrastructure/auth/jwtService');
+      const jwtService = new JwtService();
+      const { userId } = jwtService.verifyAccessToken(accessTokenCookie.value);
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:25',message:'SSR token verified',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      const { UserRepositoryImpl } = await import('../infrastructure/auth/userRepositoryImpl');
+      const userRepository = new UserRepositoryImpl();
+      const user = await userRepository.findById(userId);
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:26',message:'SSR user found',data:{userExists:!!user,isAdmin:user?.isAdministrator()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      
+      if (!user || !user.isAdministrator()) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:29',message:'SSR admin check failed',data:{userExists:!!user,isAdmin:user?.isAdministrator()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Forbidden: Administrator access required',
+        });
+      }
+    } catch (error: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:36',message:'SSR error caught',data:{errorMessage:error.message,statusCode:error.statusCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      if (error.statusCode) {
+        throw error;
+      }
+      return navigateTo('/login');
+    }
+  } else {
+    // クライアントサイドではストアの状態をチェック
+    const store = useAuthStore();
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:52',message:'Client store state BEFORE useAuth',data:{user:store.user,accessToken:!!store.accessToken,userType:store.user?.userType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    const { isAuthenticated, user, accessToken } = useAuth();
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:55',message:'Client auth check',data:{isAuthenticated:isAuthenticated.value,userExists:!!user.value,userType:user.value?.userType,hasAccessToken:!!accessToken.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+
+    // クッキーからトークンを取得してストアに設定（クライアント側の状態を復元）
+    const accessTokenCookie = useCookie('accessToken');
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:59',message:'Client cookie check',data:{hasCookie:!!accessTokenCookie.value,cookieLength:accessTokenCookie.value?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
+    if (accessTokenCookie.value && !accessToken.value) {
+      // クッキーにトークンがあるがストアにない場合、ストアに設定
+      store.setTokens(accessTokenCookie.value, null);
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:64',message:'Client token restored from cookie',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+    }
+
+    // トークンはあるがユーザー情報がない場合、APIから取得してストアに設定
+    if (accessTokenCookie.value && !user.value) {
+      try {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:72',message:'Client fetching user info',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        const userData = await $fetch('/api/auth/me');
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:75',message:'Client user info fetched',data:{userId:userData.id,userType:userData.userType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        store.setUser(userData);
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:78',message:'Client user set to store',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+      } catch (error: any) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:81',message:'Client user fetch failed',data:{errorMessage:error.message,statusCode:error.statusCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        // ユーザー情報の取得に失敗した場合、ログインページにリダイレクト
+        return navigateTo('/login');
+      }
+    }
+
+    if (!isAuthenticated.value) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:69',message:'Client not authenticated redirect',data:{user:store.user,accessToken:store.accessToken},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      return navigateTo('/login');
+    }
+
+    const { isAdministrator } = useAuth();
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:75',message:'Client admin check',data:{isAdministrator:isAdministrator.value,userType:user.value?.userType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
+    if (!isAdministrator.value) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:80',message:'Client admin check failed',data:{isAdministrator:isAdministrator.value,userType:user.value?.userType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Forbidden: Administrator access required',
+      });
+    }
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:64',message:'admin middleware exit success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+});
+

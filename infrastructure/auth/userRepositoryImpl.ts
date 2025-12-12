@@ -13,14 +13,15 @@ export class UserRepositoryImpl implements IUserRepository {
       return null;
     }
 
-    return User.reconstruct(
-      userData.id,
-      userData.email,
-      userData.passwordHash,
-      userData.name,
-      userData.createdAt,
-      userData.updatedAt
-    );
+      return User.reconstruct(
+        userData.id,
+        userData.email,
+        userData.passwordHash,
+        userData.name,
+        userData.userType,
+        userData.createdAt,
+        userData.updatedAt
+      );
   }
 
   async findByEmail(email: Email): Promise<User | null> {
@@ -32,14 +33,15 @@ export class UserRepositoryImpl implements IUserRepository {
       return null;
     }
 
-    return User.reconstruct(
-      userData.id,
-      userData.email,
-      userData.passwordHash,
-      userData.name,
-      userData.createdAt,
-      userData.updatedAt
-    );
+      return User.reconstruct(
+        userData.id,
+        userData.email,
+        userData.passwordHash,
+        userData.name,
+        userData.userType,
+        userData.createdAt,
+        userData.updatedAt
+      );
   }
 
   async save(user: User): Promise<User> {
@@ -49,6 +51,7 @@ export class UserRepositoryImpl implements IUserRepository {
         email: user.email.toString(),
         passwordHash: user.passwordHash.toString(),
         name: user.name,
+        userType: user.userType.toNumber(),
         updatedAt: new Date(),
       },
       create: {
@@ -56,25 +59,45 @@ export class UserRepositoryImpl implements IUserRepository {
         email: user.email.toString(),
         passwordHash: user.passwordHash.toString(),
         name: user.name,
+        userType: user.userType.toNumber(),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
     });
 
-    return User.reconstruct(
-      userData.id,
-      userData.email,
-      userData.passwordHash,
-      userData.name,
-      userData.createdAt,
-      userData.updatedAt
-    );
+      return User.reconstruct(
+        userData.id,
+        userData.email,
+        userData.passwordHash,
+        userData.name,
+        userData.userType,
+        userData.createdAt,
+        userData.updatedAt
+      );
   }
 
-  async delete(id: string): Promise<void> {
-    await prismaClient.user.delete({
-      where: { id },
-    });
-  }
-}
+      async findAll(): Promise<User[]> {
+        const usersData = await prismaClient.user.findMany({
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return usersData.map((userData) =>
+          User.reconstruct(
+            userData.id,
+            userData.email,
+            userData.passwordHash,
+            userData.name,
+            userData.userType,
+            userData.createdAt,
+            userData.updatedAt
+          )
+        );
+      }
+
+      async delete(id: string): Promise<void> {
+        await prismaClient.user.delete({
+          where: { id },
+        });
+      }
+    }
 

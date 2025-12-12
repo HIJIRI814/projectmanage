@@ -6,6 +6,7 @@ export class AuthResult {
       id: string;
       email: string;
       name: string;
+      userType: number;
     }
   ) {}
 }

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { User } from './User';
 import { Email } from './Email';
 import { PasswordHash } from './PasswordHash';
+import { UserType } from './UserType';
 
 describe('User', () => {
   const userId = 'test-user-id';
@@ -54,6 +55,7 @@ describe('User', () => {
         userEmail,
         hashedPassword,
         userName,
+        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );
@@ -77,6 +79,7 @@ describe('User', () => {
         userEmail,
         hashedPassword,
         userName,
+        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );
@@ -114,6 +117,7 @@ describe('User', () => {
         userEmail,
         hashedPassword,
         userName,
+        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );

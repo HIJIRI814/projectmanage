@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { UserType } from '../domain/user/model/UserType';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,7 @@ async function main() {
       email: 'test@example.com',
       passwordHash: hashedPassword,
       name: 'テストユーザー',
+      userType: UserType.ADMINISTRATOR,
     },
   });
 

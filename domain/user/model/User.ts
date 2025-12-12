@@ -1,5 +1,6 @@
 import { Email } from './Email';
 import { PasswordHash } from './PasswordHash';
+import { UserType, UserTypeValue } from './UserType';
 
 export class User {
   private constructor(
@@ -7,6 +8,7 @@ export class User {
     public readonly email: Email,
     public readonly passwordHash: PasswordHash,
     public readonly name: string,
+    public readonly userType: UserTypeValue,
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}
@@ -15,11 +17,20 @@ export class User {
     id: string,
     email: Email,
     plainPassword: string,
-    name: string
+    name: string,
+    userType: UserType = UserType.CUSTOMER
   ): Promise<User> {
     const passwordHash = await PasswordHash.create(plainPassword);
     const now = new Date();
-    return new User(id, email, passwordHash, name, now, now);
+    return new User(
+      id,
+      email,
+      passwordHash,
+      name,
+      new UserTypeValue(userType),
+      now,
+      now
+    );
   }
 
   static reconstruct(
@@ -27,6 +38,7 @@ export class User {
     email: string,
     hashedPassword: string,
     name: string,
+    userType: number,
     createdAt: Date,
     updatedAt: Date
   ): User {
@@ -35,6 +47,7 @@ export class User {
       new Email(email),
       PasswordHash.fromHash(hashedPassword),
       name,
+      UserTypeValue.fromNumber(userType),
       createdAt,
       updatedAt
     );
@@ -42,6 +55,10 @@ export class User {
 
   async verifyPassword(plainPassword: string): Promise<boolean> {
     return await this.passwordHash.verify(plainPassword);
+  }
+
+  isAdministrator(): boolean {
+    return this.userType.isAdministrator();
   }
 }
 

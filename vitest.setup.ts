@@ -32,6 +32,7 @@ globalThis.useRoute = vi.fn(() => ({
 }));
 globalThis.navigateTo = vi.fn();
 globalThis.useFetch = vi.fn();
+globalThis.definePageMeta = vi.fn();
 
 // useAuthをモック（テストファイルで上書き可能）
 globalThis.useAuth = vi.fn(() => ({
@@ -41,6 +42,7 @@ globalThis.useAuth = vi.fn(() => ({
   isLoading: { value: false },
   error: { value: null },
   isAuthenticated: { value: false },
+  isAdministrator: { value: false },
   login: vi.fn(),
   logout: vi.fn(),
   setUser: vi.fn(),

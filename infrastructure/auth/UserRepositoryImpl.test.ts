@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserRepositoryImpl } from './userRepositoryImpl';
 import { User } from '../../domain/user/model/User';
 import { Email } from '../../domain/user/model/Email';
+import { UserType } from '../../domain/user/model/UserType';
 import { prismaClient } from '../prisma/prismaClient';
 
 // Prismaクライアントをモック
@@ -36,6 +37,7 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: userName,
+        userType: 4,
         createdAt,
         updatedAt,
       };
@@ -73,6 +75,7 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: userName,
+        userType: 4,
         createdAt,
         updatedAt,
       };
@@ -110,6 +113,7 @@ describe('UserRepositoryImpl', () => {
         userEmail,
         hashedPassword,
         userName,
+        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );
@@ -119,6 +123,7 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: userName,
+        userType: 4,
         createdAt,
         updatedAt,
       };
@@ -135,6 +140,7 @@ describe('UserRepositoryImpl', () => {
           email: userEmail,
           passwordHash: hashedPassword,
           name: userName,
+          userType: 4,
           updatedAt: expect.any(Date),
         },
         create: {
@@ -142,6 +148,7 @@ describe('UserRepositoryImpl', () => {
           email: userEmail,
           passwordHash: hashedPassword,
           name: userName,
+          userType: 4,
           createdAt,
           updatedAt,
         },
@@ -155,6 +162,7 @@ describe('UserRepositoryImpl', () => {
         userEmail,
         hashedPassword,
         'Updated Name',
+        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );
@@ -164,6 +172,7 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: 'Updated Name',
+        userType: 4,
         createdAt,
         updatedAt: new Date(),
       };
@@ -185,6 +194,7 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: userName,
+        userType: 4,
         createdAt,
         updatedAt,
       });

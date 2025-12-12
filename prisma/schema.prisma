@@ -15,6 +15,7 @@ model User {
   email       String   @unique
   passwordHash String
   name        String
+  userType    Int      @default(4) // 1: ADMINISTRATOR, 2: MEMBER, 3: PARTNER, 4: CUSTOMER
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
