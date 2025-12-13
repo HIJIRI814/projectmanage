@@ -32,6 +32,7 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   members ProjectMember[]
+  sheets  Sheet[]
 
   @@map("projects")
 }
@@ -47,5 +48,34 @@ model ProjectMember {
 
   @@unique([projectId, userId])
   @@map("project_members")
+}
+
+model Sheet {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  content     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project  Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions SheetVersion[]
+
+  @@map("sheets")
+}
+
+model SheetVersion {
+  id          String   @id @default(uuid())
+  sheetId     String
+  name        String
+  description String?
+  content     String?
+  versionName String
+  createdAt   DateTime @default(now())
+
+  sheet Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@map("sheet_versions")
 }
 

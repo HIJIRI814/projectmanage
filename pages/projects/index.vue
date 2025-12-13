@@ -27,20 +27,41 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="project in projects" :key="project.id">
-          <td>{{ project.id }}</td>
-          <td>{{ project.name }}</td>
-          <td>{{ project.description || '-' }}</td>
-          <td>{{ formatDate(project.createdAt) }}</td>
-          <td v-if="canManageProjects">
-            <NuxtLink :to="`/projects/${project.id}/edit`" class="edit-button">
-              編集
-            </NuxtLink>
-            <button @click="handleDelete(project.id)" class="delete-button">
-              削除
-            </button>
-          </td>
-        </tr>
+        <template v-for="project in projects" :key="project.id">
+          <tr>
+            <td>{{ project.id }}</td>
+            <td>
+              <NuxtLink :to="`/projects/${project.id}`" class="project-link">
+                {{ project.name }}
+              </NuxtLink>
+            </td>
+            <td>{{ project.description || '-' }}</td>
+            <td>{{ formatDate(project.createdAt) }}</td>
+            <td v-if="canManageProjects">
+              <NuxtLink :to="`/projects/${project.id}/edit`" class="edit-button">
+                編集
+              </NuxtLink>
+              <button @click="handleDelete(project.id)" class="delete-button">
+                削除
+              </button>
+            </td>
+          </tr>
+          <tr v-if="projectSheets[project.id]?.length" class="sheets-row">
+            <td :colspan="canManageProjects ? 5 : 4">
+              <div class="sheets-list">
+                <div class="sheets-label">シート:</div>
+                <div
+                  v-for="sheet in projectSheets[project.id]"
+                  :key="sheet.id"
+                  class="sheet-item"
+                  @click="navigateTo(`/projects/${project.id}/sheets/${sheet.id}`)"
+                >
+                  {{ sheet.name }}
+                </div>
+              </div>
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -61,6 +82,25 @@ const canManageProjects = computed(() => {
 });
 
 const { data: projects, error, isLoading, refresh } = useFetch('/api/projects');
+
+const projectSheets = ref<Record<string, any[]>>({});
+
+// 各プロジェクトのシート一覧を取得
+watch(projects, async (newProjects) => {
+  if (!newProjects) return;
+  
+  for (const project of newProjects) {
+    try {
+      const { data: sheets } = await useFetch(`/api/projects/${project.id}/sheets`);
+      if (sheets.value) {
+        projectSheets.value[project.id] = sheets.value;
+      }
+    } catch (err) {
+      console.error(`Failed to fetch sheets for project ${project.id}:`, err);
+      projectSheets.value[project.id] = [];
+    }
+  }
+}, { immediate: true });
 
 const formatDate = (date: string | Date) => {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -158,6 +198,52 @@ h1 {
 
 .projects-table tbody tr:hover {
   background-color: #f7fafc;
+}
+
+.projects-table tbody tr.sheets-row:hover {
+  background-color: #f7fafc;
+}
+
+.project-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.project-link:hover {
+  text-decoration: underline;
+}
+
+.sheets-row {
+  background-color: #f9fafb;
+}
+
+.sheets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.sheets-label {
+  font-weight: 600;
+  color: #4a5568;
+  margin-right: 8px;
+}
+
+.sheet-item {
+  padding: 6px 12px;
+  background-color: #e6fffa;
+  border: 1px solid #81e6d9;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+}
+
+.sheet-item:hover {
+  background-color: #b2f5ea;
 }
 
 .edit-button {
