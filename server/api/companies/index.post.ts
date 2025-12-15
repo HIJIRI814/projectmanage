@@ -49,28 +49,26 @@ async function getCurrentUser(event: any) {
   }
 }
 
-async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
   if (userCompanies.length === 0) {
-    return null;
+    return false;
   }
-  // 最初の会社のuserTypeを返す（デフォルトとして）
-  return userCompanies[0].userType.toNumber();
-}
-
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
+  // いずれかの会社でADMINISTRATORであるかをチェック
+  return userCompanies.some(
+    (uc) => uc.userType.toNumber() === UserType.ADMINISTRATOR
+  );
 }
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
-  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
-  const userType = await getUserTypeInAnyCompany(currentUser.id);
-  if (!userType || !isAdministratorOrMember(userType)) {
+  // 管理者権限チェック
+  const isAdministrator = await isAdministratorInAnyCompany(currentUser.id);
+  if (!isAdministrator) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required',
+      statusMessage: 'Forbidden: Administrator access required',
     });
   }
 

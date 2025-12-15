@@ -4,6 +4,7 @@ import { JwtService } from '../../../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
 import { AddUserToCompanyInput } from '../../../../../application/userCompany/dto/AddUserToCompanyInput';
 import { UserType } from '../../../../../domain/user/model/UserType';
+import { isAdministratorInCompany } from '../../../../utils/auth';
 import { z } from 'zod';
 
 const userCompanyRepository = new UserCompanyRepositoryImpl();
@@ -48,15 +49,6 @@ async function getCurrentUser(event: any) {
   }
 }
 
-async function getUserTypeInCompany(userId: string, companyId: string): Promise<number | null> {
-  const userCompany = await userCompanyRepository.findByUserIdAndCompanyId(userId, companyId);
-  return userCompany ? userCompany.userType.toNumber() : null;
-}
-
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
-}
-
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
@@ -68,12 +60,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // その会社でのuserTypeを取得
-  const userType = await getUserTypeInCompany(currentUser.id, companyId);
-  if (!userType || !isAdministratorOrMember(userType)) {
+  // 特定の会社での管理者権限チェック
+  const isAdministrator = await isAdministratorInCompany(currentUser.id, companyId);
+  if (!isAdministrator) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required in this company',
+      statusMessage: 'Forbidden: Administrator access required for this company',
     });
   }
 

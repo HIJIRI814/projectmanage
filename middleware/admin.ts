@@ -41,17 +41,67 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:25',message:'SSR token verified',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      // SSR時はAPIからユーザー情報を取得してuserTypeをチェック
+      // SSR時は直接リポジトリからユーザー情報を取得してuserTypeをチェック
       try {
-        const userData = await $fetch('/api/auth/me');
+        const { UserRepositoryImpl } = await import('../infrastructure/auth/userRepositoryImpl');
+        const { UserCompanyRepositoryImpl } = await import('../infrastructure/user/userCompanyRepositoryImpl');
         const { UserType } = await import('../domain/user/model/UserType');
-        if (!userData || userData.userType !== UserType.ADMINISTRATOR) {
+        const userRepository = new UserRepositoryImpl();
+        const userCompanyRepository = new UserCompanyRepositoryImpl();
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:46',message:'SSR before findById',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        
+        const user = await userRepository.findById(userId);
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:52',message:'SSR after findById',data:{userFound:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        
+        if (!user) {
+          throw createError({
+            statusCode: 403,
+            statusMessage: 'Forbidden: Administrator access required',
+          });
+        }
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:61',message:'SSR before findByUserId',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        
+        // userCompaniesの中にADMINISTRATORのuserTypeを持つものがあるかチェック
+        const userCompanies = await userCompanyRepository.findByUserId(userId);
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:65',message:'SSR after findByUserId',data:{userCompaniesCount:userCompanies.length,userCompanies:userCompanies.map(uc=>({id:uc.id,userId:uc.userId,companyId:uc.companyId,userType:uc.userType.toNumber()})),UserTypeADMINISTRATOR:UserType.ADMINISTRATOR},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:68',message:'SSR before administrator check',data:{userCompanies:userCompanies.map(uc=>({userTypeNumber:uc.userType.toNumber(),isAdministrator:uc.userType.toNumber()===UserType.ADMINISTRATOR}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        
+        const isAdministrator = userCompanies.some(
+          (uc) => uc.userType.toNumber() === UserType.ADMINISTRATOR
+        );
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:72',message:'SSR after administrator check',data:{isAdministrator,UserTypeADMINISTRATOR:UserType.ADMINISTRATOR},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        
+        if (!isAdministrator) {
+          // #region agent log
+          fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:76',message:'SSR administrator check failed',data:{isAdministrator,userCompaniesCount:userCompanies.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
           throw createError({
             statusCode: 403,
             statusMessage: 'Forbidden: Administrator access required',
           });
         }
       } catch (error: any) {
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:85',message:'SSR inner catch',data:{errorMessage:error.message,statusCode:error.statusCode,errorName:error.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         if (error.statusCode) {
           throw error;
         }
@@ -62,11 +112,17 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       }
     } catch (error: any) {
       // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:36',message:'SSR error caught',data:{errorMessage:error.message,statusCode:error.statusCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:90',message:'SSR outer catch',data:{errorMessage:error.message,statusCode:error.statusCode,errorName:error.name,errorStack:error.stack?.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       if (error.statusCode) {
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:94',message:'SSR throwing error with statusCode',data:{statusCode:error.statusCode,statusMessage:error.statusMessage},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         throw error;
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:99',message:'SSR redirecting to login',data:{redirectPath:getRedirectPath(to.path)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       const redirectPath = getRedirectPath(to.path);
       return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
@@ -144,7 +200,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
   }
   // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:64',message:'admin middleware exit success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:167',message:'admin middleware exit success',data:{isServer:process.server},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
 });
 

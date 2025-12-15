@@ -1,18 +1,18 @@
-import { UserCompanyRepositoryImpl } from '../../../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UpdateUserCompanyType } from '../../../../../application/userCompany/useCases/UpdateUserCompanyType';
+import { CompanyInvitationRepositoryImpl } from '../../../../../infrastructure/company/companyInvitationRepositoryImpl';
+import { CreateInvitation } from '../../../../../application/company/useCases/CreateInvitation';
+import { CreateInvitationInput } from '../../../../../application/company/dto/CreateInvitationInput';
 import { JwtService } from '../../../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
-import { UpdateUserCompanyTypeInput } from '../../../../../application/userCompany/dto/UpdateUserCompanyTypeInput';
-import { UserType } from '../../../../../domain/user/model/UserType';
 import { isAdministratorInCompany } from '../../../../utils/auth';
 import { z } from 'zod';
 
-const userCompanyRepository = new UserCompanyRepositoryImpl();
-const updateUserCompanyTypeUseCase = new UpdateUserCompanyType(userCompanyRepository);
+const invitationRepository = new CompanyInvitationRepositoryImpl();
+const createInvitationUseCase = new CreateInvitation(invitationRepository);
 const userRepository = new UserRepositoryImpl();
 const jwtService = new JwtService();
 
-const updateUserCompanyTypeSchema = z.object({
+const createInvitationSchema = z.object({
+  email: z.string().email('Invalid email format'),
   userType: z.number().int().min(1).max(4),
 });
 
@@ -68,18 +68,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const userId = getRouterParam(event, 'userId');
-  if (!userId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'User ID is required',
-    });
-  }
-
   const body = await readBody(event);
 
   try {
-    const validationResult = updateUserCompanyTypeSchema.safeParse(body);
+    const validationResult = createInvitationSchema.safeParse(body);
     if (!validationResult.success) {
       throw createError({
         statusCode: 400,
@@ -88,19 +80,29 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const input = new UpdateUserCompanyTypeInput(validationResult.data.userType as UserType);
+    const input = new CreateInvitationInput(
+      companyId,
+      validationResult.data.email,
+      validationResult.data.userType
+    );
 
-    const result = await updateUserCompanyTypeUseCase.execute(userId, companyId, input);
+    const invitation = await createInvitationUseCase.execute(input, currentUser.id);
 
-    if (!result) {
+    // 招待リンクを生成
+    const invitationLink = `${process.env.BASE_URL || 'http://localhost:3000'}/invitations/${invitation.token}`;
+
+    return {
+      ...invitation,
+      invitationLink,
+    };
+  } catch (error: any) {
+    if (error.message === 'A pending invitation already exists for this email in this company') {
       throw createError({
-        statusCode: 404,
-        statusMessage: 'UserCompany not found',
+        statusCode: 409,
+        statusMessage: 'A pending invitation already exists for this email in this company',
       });
     }
 
-    return result;
-  } catch (error: any) {
     if (error.statusCode) {
       throw error;
     }

@@ -2,13 +2,11 @@ import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRe
 import { DeleteCompany } from '../../../application/company/useCases/DeleteCompany';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UserType } from '../../../domain/user/model/UserType';
+import { isAdministratorInCompany } from '../../utils/auth';
 
 const companyRepository = new CompanyRepositoryImpl();
 const deleteCompanyUseCase = new DeleteCompany(companyRepository);
 const userRepository = new UserRepositoryImpl();
-const userCompanyRepository = new UserCompanyRepositoryImpl();
 const jwtService = new JwtService();
 
 async function getCurrentUser(event: any) {
@@ -43,36 +41,23 @@ async function getCurrentUser(event: any) {
   }
 }
 
-async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
-  const userCompanies = await userCompanyRepository.findByUserId(userId);
-  if (userCompanies.length === 0) {
-    return null;
-  }
-  // 最初の会社のuserTypeを返す（デフォルトとして）
-  return userCompanies[0].userType.toNumber();
-}
-
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
-}
-
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
-
-  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
-  const userType = await getUserTypeInAnyCompany(currentUser.id);
-  if (!userType || !isAdministratorOrMember(userType)) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required',
-    });
-  }
 
   const id = getRouterParam(event, 'id');
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Company ID is required',
+    });
+  }
+
+  // 特定の会社での管理者権限チェック
+  const isAdministrator = await isAdministratorInCompany(currentUser.id, id);
+  if (!isAdministrator) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required for this company',
     });
   }
 

@@ -2,6 +2,7 @@ import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRe
 import { GetCompany } from '../../../application/company/useCases/GetCompany';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { isAdministratorInCompany } from '../../utils/auth';
 
 const companyRepository = new CompanyRepositoryImpl();
 const getCompanyUseCase = new GetCompany(companyRepository);
@@ -41,13 +42,22 @@ async function getCurrentUser(event: any) {
 }
 
 export default defineEventHandler(async (event) => {
-  await getCurrentUser(event);
+  const currentUser = await getCurrentUser(event);
 
   const id = getRouterParam(event, 'id');
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Company ID is required',
+    });
+  }
+
+  // 特定の会社での管理者権限チェック
+  const isAdministrator = await isAdministratorInCompany(currentUser.id, id);
+  if (!isAdministrator) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required for this company',
     });
   }
 

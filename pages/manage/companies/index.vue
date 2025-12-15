@@ -3,15 +3,14 @@
     <div class="companies-header">
       <h1>会社一覧</h1>
       <NuxtLink 
-        v-if="canManageCompanies" 
-        to="/companies/new" 
+        to="/manage/companies/new" 
         class="new-company-button"
       >
         新規登録
       </NuxtLink>
     </div>
 
-    <div v-if="isLoading" class="loading">読み込み中...</div>
+    <div v-if="pending" class="loading">読み込み中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="!companies || companies.length === 0" class="empty-message">
       会社が登録されていません
@@ -21,30 +20,20 @@
         <tr>
           <th>ID</th>
           <th>名前</th>
+          <th>ユーザー種別</th>
           <th>作成日</th>
-          <th v-if="canManageCompanies">操作</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="company in companies" :key="company.id">
+        <tr v-for="company in companies" :key="company.id" class="company-row">
           <td>{{ company.id }}</td>
           <td>
-            <NuxtLink :to="`/companies/${company.id}`" class="company-link">
+            <NuxtLink :to="`/manage/companies/${company.id}`" class="company-link">
               {{ company.name }}
             </NuxtLink>
           </td>
+          <td>{{ getUserTypeLabel(company.userType) }}</td>
           <td>{{ formatDate(company.createdAt) }}</td>
-          <td v-if="canManageCompanies">
-            <NuxtLink :to="`/companies/${company.id}/edit`" class="edit-button">
-              編集
-            </NuxtLink>
-            <NuxtLink :to="`/companies/${company.id}/users`" class="users-button">
-              ユーザー管理
-            </NuxtLink>
-            <button @click="handleDelete(company.id)" class="delete-button">
-              削除
-            </button>
-          </td>
         </tr>
       </tbody>
     </table>
@@ -52,39 +41,21 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-});
-
-import { UserType } from '~/domain/user/model/UserType';
-
-const { user } = useAuth();
-
-const canManageCompanies = computed(() => {
-  if (!user.value || user.value.userType === null) return false;
-  return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
-});
-
-const { data: companies, error, isLoading, refresh } = useFetch('/api/companies');
+const { data: companies, error, pending } = useFetch('/api/companies');
 
 const formatDate = (date: string | Date) => {
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('ja-JP');
 };
 
-const handleDelete = async (companyId: string) => {
-  if (!confirm('本当に削除しますか？')) {
-    return;
-  }
-
-  try {
-    await $fetch(`/api/companies/${companyId}`, {
-      method: 'DELETE',
-    });
-    await refresh();
-  } catch (err: any) {
-    alert(err.data?.message || '削除に失敗しました');
-  }
+const getUserTypeLabel = (userType: number) => {
+  const labels: Record<number, string> = {
+    1: '管理者',
+    2: 'メンバー',
+    3: 'パートナー',
+    4: '顧客',
+  };
+  return labels[userType] || '不明';
 };
 </script>
 
@@ -161,7 +132,11 @@ h1 {
   border-bottom: 1px solid #eee;
 }
 
-.companies-table tbody tr:hover {
+.companies-table tbody tr.company-row {
+  cursor: pointer;
+}
+
+.companies-table tbody tr.company-row:hover {
   background-color: #f7fafc;
 }
 
@@ -173,48 +148,6 @@ h1 {
 
 .company-link:hover {
   text-decoration: underline;
-}
-
-.edit-button {
-  padding: 6px 12px;
-  background-color: #48bb78;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.edit-button:hover {
-  background-color: #38a169;
-}
-
-.users-button {
-  padding: 6px 12px;
-  background-color: #4299e1;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.users-button:hover {
-  background-color: #3182ce;
-}
-
-.delete-button {
-  padding: 6px 12px;
-  background-color: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.delete-button:hover {
-  background-color: #c53030;
 }
 </style>
 

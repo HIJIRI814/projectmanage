@@ -1,20 +1,13 @@
-import { UserCompanyRepositoryImpl } from '../../../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UpdateUserCompanyType } from '../../../../../application/userCompany/useCases/UpdateUserCompanyType';
+import { CompanyInvitationRepositoryImpl } from '../../../../../infrastructure/company/companyInvitationRepositoryImpl';
+import { ListInvitations } from '../../../../../application/company/useCases/ListInvitations';
 import { JwtService } from '../../../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
-import { UpdateUserCompanyTypeInput } from '../../../../../application/userCompany/dto/UpdateUserCompanyTypeInput';
-import { UserType } from '../../../../../domain/user/model/UserType';
 import { isAdministratorInCompany } from '../../../../utils/auth';
-import { z } from 'zod';
 
-const userCompanyRepository = new UserCompanyRepositoryImpl();
-const updateUserCompanyTypeUseCase = new UpdateUserCompanyType(userCompanyRepository);
+const invitationRepository = new CompanyInvitationRepositoryImpl();
+const listInvitationsUseCase = new ListInvitations(invitationRepository);
 const userRepository = new UserRepositoryImpl();
 const jwtService = new JwtService();
-
-const updateUserCompanyTypeSchema = z.object({
-  userType: z.number().int().min(1).max(4),
-});
 
 async function getCurrentUser(event: any) {
   const accessTokenCookie = getCookie(event, 'accessToken');
@@ -68,38 +61,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const userId = getRouterParam(event, 'userId');
-  if (!userId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'User ID is required',
-    });
-  }
-
-  const body = await readBody(event);
-
   try {
-    const validationResult = updateUserCompanyTypeSchema.safeParse(body);
-    if (!validationResult.success) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Validation error',
-        data: validationResult.error.errors,
-      });
-    }
-
-    const input = new UpdateUserCompanyTypeInput(validationResult.data.userType as UserType);
-
-    const result = await updateUserCompanyTypeUseCase.execute(userId, companyId, input);
-
-    if (!result) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'UserCompany not found',
-      });
-    }
-
-    return result;
+    const invitations = await listInvitationsUseCase.execute(companyId);
+    return invitations;
   } catch (error: any) {
     if (error.statusCode) {
       throw error;

@@ -89,6 +89,13 @@ model SheetVersion {
   @@map("sheet_versions")
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
 model Company {
   id        String   @id @default(uuid())
   name      String
@@ -97,6 +104,7 @@ model Company {
 
   userCompanies    UserCompany[]
   projectCompanies ProjectCompany[]
+  invitations      CompanyInvitation[]
 
   @@map("companies")
 }
@@ -127,4 +135,22 @@ model ProjectCompany {
 
   @@unique([projectId, companyId])
   @@map("project_companies")
+}
+
+model CompanyInvitation {
+  id        String           @id @default(uuid())
+  companyId String
+  email     String
+  token     String           @unique
+  userType  Int              @default(4) // 1: ADMINISTRATOR, 2: MEMBER, 3: PARTNER, 4: CUSTOMER
+  status    InvitationStatus @default(PENDING)
+  invitedBy String           // 招待したユーザーID
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, email, status])
+  @@map("company_invitations")
 }

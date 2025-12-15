@@ -1,7 +1,9 @@
 <template>
   <div class="company-form-container">
-    <h1>新規会社登録</h1>
-    <form @submit.prevent="handleSubmit" class="company-form">
+    <h1>会社編集</h1>
+    <div v-if="isLoadingCompany" class="loading">読み込み中...</div>
+    <div v-else-if="companyError" class="error">{{ companyError }}</div>
+    <form v-else @submit.prevent="handleSubmit" class="company-form">
       <div class="form-group">
         <label for="name">名前</label>
         <input
@@ -15,9 +17,9 @@
       <div v-if="error" class="error-message">{{ error }}</div>
       <div class="form-actions">
         <button type="submit" :disabled="isLoading" class="submit-button">
-          {{ isLoading ? '登録中...' : '登録' }}
+          {{ isLoading ? '更新中...' : '更新' }}
         </button>
-        <NuxtLink to="/companies" class="cancel-button">キャンセル</NuxtLink>
+        <NuxtLink to="/manage/companies" class="cancel-button">キャンセル</NuxtLink>
       </div>
     </form>
   </div>
@@ -25,49 +27,63 @@
 
 <script setup lang="ts">
 definePageMeta({
+  // 会社ごとの管理者権限チェックはAPIエンドポイント側で行われるため、
+  // ここでは通常の認証ミドルウェアのみを使用
   middleware: 'auth',
 });
 
-import { UserType } from '~/domain/user/model/UserType';
-
+const route = useRoute();
 const router = useRouter();
-const { user } = useAuth();
-
-// 管理者・メンバーのみアクセス可能
-const canManageCompanies = computed(() => {
-  if (!user.value || user.value.userType === null) return false;
-  return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
-});
-
-// アクセス権限チェック
-if (process.client && !canManageCompanies.value) {
-  throw createError({
-    statusCode: 403,
-    statusMessage: 'Forbidden: Administrator or Member access required',
-  });
-}
+const companyId = route.params.id as string;
 
 const form = ref({
   name: '',
 });
 
 const isLoading = ref(false);
+const isLoadingCompany = ref(true);
 const error = ref<string | null>(null);
+const companyError = ref<string | null>(null);
+
+const { data: company } = await useFetch(`/api/companies/${companyId}`, {
+  onResponseError({ response }) {
+    companyError.value = response.statusText || '会社の取得に失敗しました';
+    isLoadingCompany.value = false;
+  },
+  onResponse({ response }) {
+    if (response._data) {
+      const companyData = response._data;
+      form.value = {
+        name: companyData.name,
+      };
+    }
+    isLoadingCompany.value = false;
+  },
+});
+
+watch(company, (newCompany) => {
+  if (newCompany) {
+    form.value = {
+      name: newCompany.name,
+    };
+    isLoadingCompany.value = false;
+  }
+}, { immediate: true });
 
 const handleSubmit = async () => {
   isLoading.value = true;
   error.value = null;
 
   try {
-    await $fetch('/api/companies', {
-      method: 'POST',
+    await $fetch(`/api/companies/${companyId}`, {
+      method: 'PUT',
       body: {
         name: form.value.name,
       },
     });
-    router.push('/companies');
+    router.push('/manage/companies');
   } catch (err: any) {
-    error.value = err.data?.message || '登録に失敗しました';
+    error.value = err.data?.message || '更新に失敗しました';
   } finally {
     isLoading.value = false;
   }
@@ -85,6 +101,17 @@ h1 {
   font-size: 28px;
   color: #333;
   margin-bottom: 30px;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+}
+
+.error {
+  color: #e53e3e;
 }
 
 .company-form {
