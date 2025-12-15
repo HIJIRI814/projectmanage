@@ -485,7 +485,8 @@ textarea {
 }
 
 .image-preview img {
-  max-width: 240px;
+  width: 100%;
+  height: auto;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
