@@ -1,14 +1,17 @@
 import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
 import { DeleteProject } from '../../../application/project/useCases/DeleteProject';
+import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
 import { UserType } from '../../../domain/user/model/UserType';
+import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
 
 const projectRepository = new ProjectRepositoryImpl();
 const deleteProjectUseCase = new DeleteProject(projectRepository);
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
+const projectAccessService = new ProjectAccessService(userCompanyRepository);
 const jwtService = new JwtService();
 
 async function getCurrentUser(event: any) {
@@ -43,36 +46,45 @@ async function getCurrentUser(event: any) {
   }
 }
 
-async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
-  const userCompanies = await userCompanyRepository.findByUserId(userId);
-  if (userCompanies.length === 0) {
-    return null;
-  }
-  // 最初の会社のuserTypeを返す（デフォルトとして）
-  return userCompanies[0].userType.toNumber();
-}
-
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
+async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
+  const projectMember = await prismaClient.projectMember.findUnique({
+    where: {
+      projectId_userId: {
+        projectId,
+        userId,
+      },
+    },
+  });
+  return !!projectMember;
 }
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
-
-  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
-  const userType = await getUserTypeInAnyCompany(currentUser.id);
-  if (!userType || !isAdministratorOrMember(userType)) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required',
-    });
-  }
 
   const id = getRouterParam(event, 'id');
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Project ID is required',
+    });
+  }
+
+  // プロジェクトの存在確認とアクセス権限チェック
+  const project = await projectRepository.findById(id);
+  if (!project) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Project not found',
+    });
+  }
+
+  const isMember = await isProjectMember(currentUser.id, project.id);
+  const canEdit = await projectAccessService.canEdit(project, currentUser.id, isMember);
+
+  if (!canEdit) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden: You do not have permission to delete this project',
     });
   }
 

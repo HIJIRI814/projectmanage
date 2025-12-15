@@ -3,7 +3,7 @@
     <div class="projects-header">
       <h1>プロジェクト</h1>
       <NuxtLink 
-        v-if="canManageProjects" 
+        v-if="user && user.userCompanies && user.userCompanies.some((uc: any) => uc.userType === UserType.ADMINISTRATOR)" 
         to="/projects/new" 
         class="new-project-button"
       >
@@ -23,7 +23,7 @@
           <th>名前</th>
           <th>説明</th>
           <th>作成日</th>
-          <th v-if="canManageProjects">操作</th>
+          <th v-if="projects && projects.some((p: any) => canEditProject(p))">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -37,7 +37,7 @@
             </td>
             <td>{{ project.description || '-' }}</td>
             <td>{{ formatDate(project.createdAt) }}</td>
-            <td v-if="canManageProjects">
+            <td v-if="canEditProject(project)">
               <NuxtLink :to="`/projects/${project.id}/edit`" class="edit-button">
                 編集
               </NuxtLink>
@@ -47,7 +47,7 @@
             </td>
           </tr>
           <tr v-if="projectSheets[project.id]?.length" class="sheets-row">
-            <td :colspan="canManageProjects ? 5 : 4">
+            <td :colspan="projects && projects.some((p: any) => canEditProject(p)) ? 5 : 4">
               <div class="sheets-list">
                 <div class="sheets-label">シート:</div>
                 <div
@@ -76,10 +76,27 @@ import { UserType } from '~/domain/user/model/UserType';
 
 const { user } = useAuth();
 
-const canManageProjects = computed(() => {
-  if (!user.value || user.value.userType === null) return false;
-  return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
-});
+// プロジェクトに所属する会社のいずれかで管理者であるかをチェックする関数
+// プライベートプロジェクト（companyIdsが空）の場合は、API側でプロジェクトメンバーかどうかをチェックするため、ここでは常にtrueを返す
+const canEditProject = (project: any) => {
+  if (!user.value || !project) return false;
+  
+  // プライベートプロジェクト（companyIdsが空または存在しない）の場合
+  if (!project.companyIds || project.companyIds.length === 0) {
+    // API側でプロジェクトメンバーかどうかをチェックするため、ここではtrueを返す
+    return true;
+  }
+  
+  // 社内公開プロジェクトの場合、プロジェクトに所属する会社のいずれかで管理者であるかをチェック
+  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false;
+  
+  return project.companyIds.some((companyId: string) => {
+    const userCompany = user.value?.userCompanies?.find(
+      (uc) => uc.companyId === companyId
+    );
+    return userCompany?.userType === UserType.ADMINISTRATOR;
+  });
+};
 
 const { data: projects, error, isLoading, refresh } = useFetch('/api/projects');
 

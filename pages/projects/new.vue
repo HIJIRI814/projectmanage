@@ -97,11 +97,14 @@ const isLoadingCompanies = ref(true);
 const companiesError = ref<string | null>(null);
 const companies = ref<any[]>([]);
 
-// 会社一覧を取得
+// 会社一覧を取得（管理者となっている会社のみ）
 const { data: companiesData, error: companiesFetchError } = await useFetch('/api/companies');
 watch(companiesData, (newCompanies) => {
   if (newCompanies) {
-    companies.value = newCompanies;
+    // 管理者となっている会社のみをフィルタリング
+    companies.value = newCompanies.filter(
+      (company: any) => company.userType === UserType.ADMINISTRATOR
+    );
     isLoadingCompanies.value = false;
   }
 }, { immediate: true });

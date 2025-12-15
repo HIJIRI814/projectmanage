@@ -1,6 +1,7 @@
 import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
 import { GetProject } from '../../../application/project/useCases/GetProject';
 import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
+import { ProjectOutput } from '../../../application/project/dto/ProjectOutput';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';

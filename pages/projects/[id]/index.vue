@@ -7,14 +7,14 @@
         <h1>{{ project.name }}</h1>
         <div class="project-actions">
           <NuxtLink
-            v-if="canManageProjects"
+            v-if="canEditProject"
             :to="`/projects/${projectId}/edit`"
             class="edit-button"
           >
             編集
           </NuxtLink>
           <NuxtLink
-            v-if="canManageProjects"
+            v-if="canEditProject"
             :to="`/projects/${projectId}/sheets/new`"
             class="new-sheet-button"
           >
@@ -72,9 +72,26 @@ const projectId = route.params.id as string;
 
 const { user } = useAuth();
 
-const canManageProjects = computed(() => {
-  if (!user.value || user.value.userType === null) return false;
-  return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
+// プロジェクトに所属する会社のいずれかで管理者であるかをチェック
+// プライベートプロジェクト（companyIdsが空）の場合は、API側でプロジェクトメンバーかどうかをチェックするため、ここでは常にtrueを返す
+const canEditProject = computed(() => {
+  if (!user.value || !project.value) return false;
+  
+  // プライベートプロジェクト（companyIdsが空または存在しない）の場合
+  if (!project.value.companyIds || project.value.companyIds.length === 0) {
+    // API側でプロジェクトメンバーかどうかをチェックするため、ここではtrueを返す
+    return true;
+  }
+  
+  // 社内公開プロジェクトの場合、プロジェクトに所属する会社のいずれかで管理者であるかをチェック
+  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false;
+  
+  return project.value.companyIds.some((companyId: string) => {
+    const userCompany = user.value?.userCompanies?.find(
+      (uc) => uc.companyId === companyId
+    );
+    return userCompany?.userType === UserType.ADMINISTRATOR;
+  });
 });
 
 const isLoadingProject = ref(true);

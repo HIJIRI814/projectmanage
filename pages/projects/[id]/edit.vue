@@ -75,20 +75,6 @@ const projectId = route.params.id as string;
 
 const { user } = useAuth();
 
-// 管理者・メンバーのみアクセス可能
-const canManageProjects = computed(() => {
-  if (!user.value || user.value.userType === null) return false;
-  return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
-});
-
-// アクセス権限チェック
-if (process.client && !canManageProjects.value) {
-  throw createError({
-    statusCode: 403,
-    statusMessage: 'Forbidden: Administrator or Member access required',
-  });
-}
-
 const form = ref({
   name: '',
   description: '',
@@ -103,12 +89,16 @@ const projectError = ref<string | null>(null);
 const isLoadingCompanies = ref(true);
 const companiesError = ref<string | null>(null);
 const companies = ref<any[]>([]);
+const project = ref<any>(null);
 
-// 会社一覧を取得
+// 会社一覧を取得（管理者となっている会社のみ）
 const { data: companiesData, error: companiesFetchError } = await useFetch('/api/companies');
 watch(companiesData, (newCompanies) => {
   if (newCompanies) {
-    companies.value = newCompanies;
+    // 管理者となっている会社のみをフィルタリング
+    companies.value = newCompanies.filter(
+      (company: any) => company.userType === UserType.ADMINISTRATOR
+    );
     isLoadingCompanies.value = false;
   }
 }, { immediate: true });
@@ -119,7 +109,39 @@ watch(companiesFetchError, (err) => {
   }
 });
 
-const { data: project } = await useFetch(`/api/projects/${projectId}`, {
+// プロジェクトに所属する会社のいずれかで管理者であるかをチェック
+// プライベートプロジェクト（companyIdsが空）の場合は、API側でプロジェクトメンバーかどうかをチェックするため、ここでは常にtrueを返す
+const canEditProject = computed(() => {
+  if (!user.value || !project.value) return false;
+  
+  // プライベートプロジェクト（companyIdsが空または存在しない）の場合
+  if (!project.value.companyIds || project.value.companyIds.length === 0) {
+    // API側でプロジェクトメンバーかどうかをチェックするため、ここではtrueを返す
+    return true;
+  }
+  
+  // 社内公開プロジェクトの場合、プロジェクトに所属する会社のいずれかで管理者であるかをチェック
+  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false;
+  
+  return project.value.companyIds.some((companyId: string) => {
+    const userCompany = user.value?.userCompanies?.find(
+      (uc) => uc.companyId === companyId
+    );
+    return userCompany?.userType === UserType.ADMINISTRATOR;
+  });
+});
+
+// アクセス権限チェック（プロジェクト情報取得後に実行）
+watch(project, (newProject) => {
+  if (process.client && newProject && !canEditProject.value) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required for this project',
+    });
+  }
+}, { immediate: true });
+
+const { data: projectData } = await useFetch(`/api/projects/${projectId}`, {
   onResponseError({ response }) {
     projectError.value = response.statusText || 'プロジェクトの取得に失敗しました';
     isLoadingProject.value = false;
@@ -127,6 +149,7 @@ const { data: project } = await useFetch(`/api/projects/${projectId}`, {
   onResponse({ response }) {
     if (response._data) {
       const projectData = response._data;
+      project.value = projectData;
       form.value = {
         name: projectData.name,
         description: projectData.description || '',
@@ -139,8 +162,9 @@ const { data: project } = await useFetch(`/api/projects/${projectId}`, {
 });
 
 // project.value の変化を監視してフォームを更新（SSR/CSRの両方に対応）
-watch(project, (newProject) => {
+watch(projectData, (newProject) => {
   if (newProject) {
+    project.value = newProject;
     form.value = {
       name: newProject.name,
       description: newProject.description || '',

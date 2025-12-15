@@ -71,13 +71,19 @@ export class ProjectAccessService {
     userId: string,
     isProjectMember: boolean
   ): Promise<boolean> {
-    // プロジェクトメンバーは常に編集可能
-    if (isProjectMember) {
-      return true;
+    // プライベートプロジェクト: プロジェクトメンバーのみ編集可能
+    if (project.visibility.isPrivate()) {
+      return isProjectMember;
     }
 
-    // 社内公開: 同じ会社の管理者・メンバーが編集可能
+    // 社内公開プロジェクト: プロジェクトに所属する会社のいずれかで管理者であるかをチェック
     if (project.visibility.isCompanyInternal()) {
+      // プロジェクトメンバーは常に編集可能
+      if (isProjectMember) {
+        return true;
+      }
+
+      // プロジェクトに所属する会社のいずれかで管理者であるかをチェック
       for (const companyId of project.companyIds) {
         const userCompany = await this.userCompanyRepository.findByUserIdAndCompanyId(
           userId,
@@ -86,15 +92,18 @@ export class ProjectAccessService {
 
         if (userCompany) {
           const userType = userCompany.userType.toNumber();
-          // 管理者・メンバーは編集可能
-          if (
-            userType === UserType.ADMINISTRATOR ||
-            userType === UserType.MEMBER
-          ) {
+          // 管理者のみ編集可能
+          if (userType === UserType.ADMINISTRATOR) {
             return true;
           }
         }
       }
+    }
+
+    // 公開プロジェクト: 今後実装
+    if (project.visibility.isPublic()) {
+      // 今後実装
+      return false;
     }
 
     return false;
