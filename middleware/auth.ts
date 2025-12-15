@@ -1,12 +1,27 @@
 import { useAuthStore } from '~/stores/auth';
 
+// 安全なリダイレクトパスを生成する関数
+const getRedirectPath = (targetPath: string): string => {
+  // /loginページ自体へのアクセス時は/projectsにリダイレクト
+  if (targetPath === '/login') {
+    return '/projects';
+  }
+  // 相対パスで、かつ/で始まる場合のみ許可（セキュリティ対策）
+  if (targetPath.startsWith('/') && !targetPath.startsWith('//')) {
+    return targetPath;
+  }
+  // 不正なパスの場合は/projectsにリダイレクト
+  return '/projects';
+};
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
   if (process.server) {
     // SSR時はクッキーからトークンをチェック
     const accessTokenCookie = useCookie('accessToken');
     
     if (!accessTokenCookie.value) {
-      return navigateTo('/login');
+      const redirectPath = getRedirectPath(to.path);
+      return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
   } else {
     // クライアントサイドではストアの状態をチェック
@@ -28,12 +43,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         store.setUser(userData);
       } catch (error: any) {
         // ユーザー情報の取得に失敗した場合、ログインページにリダイレクト
-        return navigateTo('/login');
+        const redirectPath = getRedirectPath(to.path);
+        return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
       }
     }
 
     if (!isAuthenticated.value) {
-      return navigateTo('/login');
+      const redirectPath = getRedirectPath(to.path);
+      return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
   }
 });

@@ -42,16 +42,34 @@ definePageMeta({
   middleware: 'guest',
 });
 
+const route = useRoute();
 const router = useRouter();
 const { login, isLoading, error } = useAuth();
 
 const email = ref('');
 const password = ref('');
 
+// 安全なリダイレクトパスを検証する関数
+const validateRedirectPath = (path: string | undefined): string | null => {
+  if (!path) {
+    return null;
+  }
+  // 相対パスで、かつ/で始まる場合のみ許可（セキュリティ対策）
+  if (path.startsWith('/') && !path.startsWith('//') && !path.startsWith('http://') && !path.startsWith('https://')) {
+    return path;
+  }
+  // 不正なパスの場合はnullを返す（デフォルトの/projectsにリダイレクト）
+  return null;
+};
+
 const handleLogin = async () => {
   try {
     await login(email.value, password.value);
-    await router.push('/projects');
+    // クエリパラメータからredirectを取得
+    const redirectParam = route.query.redirect as string | undefined;
+    const redirectPath = validateRedirectPath(redirectParam);
+    // redirectパラメータがあればそのページに、なければ/projectsにリダイレクト
+    await router.push(redirectPath || '/projects');
   } catch (err) {
     // エラーはストアで管理されているので、ここでは何もしない
     console.error('Login error:', err);

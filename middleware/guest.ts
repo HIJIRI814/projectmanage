@@ -1,13 +1,30 @@
 import { useAuthStore } from '~/stores/auth';
 
+// 安全なリダイレクトパスを検証する関数
+const validateRedirectPath = (path: string | undefined): string | null => {
+  if (!path) {
+    return null;
+  }
+  // 相対パスで、かつ/で始まる場合のみ許可（セキュリティ対策）
+  if (path.startsWith('/') && !path.startsWith('//') && !path.startsWith('http://') && !path.startsWith('https://')) {
+    return path;
+  }
+  // 不正なパスの場合はnullを返す（デフォルトの/projectsにリダイレクト）
+  return null;
+};
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  // クエリパラメータからredirectを取得
+  const redirectParam = to.query.redirect as string | undefined;
+  const redirectPath = validateRedirectPath(redirectParam);
+
   if (process.server) {
     // SSR時はクッキーからトークンをチェック
     const accessTokenCookie = useCookie('accessToken');
     
     if (accessTokenCookie.value) {
-      // 既にログイン済みの場合はプロジェクト一覧へリダイレクト
-      return navigateTo('/projects');
+      // 既にログイン済みの場合はredirectパラメータがあればそのページに、なければプロジェクト一覧へリダイレクト
+      return navigateTo(redirectPath || '/projects');
     }
   } else {
     // クライアントサイドではストアの状態をチェック
@@ -34,7 +51,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
 
     if (isAuthenticated.value) {
-      return navigateTo('/projects');
+      // 既にログイン済みの場合はredirectパラメータがあればそのページに、なければプロジェクト一覧へリダイレクト
+      return navigateTo(redirectPath || '/projects');
     }
   }
 });

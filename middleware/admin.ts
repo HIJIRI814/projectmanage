@@ -1,5 +1,19 @@
 import { useAuthStore } from '~/stores/auth';
 
+// 安全なリダイレクトパスを生成する関数
+const getRedirectPath = (targetPath: string): string => {
+  // /loginページ自体へのアクセス時は/projectsにリダイレクト
+  if (targetPath === '/login') {
+    return '/projects';
+  }
+  // 相対パスで、かつ/で始まる場合のみ許可（セキュリティ対策）
+  if (targetPath.startsWith('/') && !targetPath.startsWith('//')) {
+    return targetPath;
+  }
+  // 不正なパスの場合は/projectsにリダイレクト
+  return '/projects';
+};
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // #region agent log
   fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:9',message:'admin middleware entry',data:{to:to.path,from:from.path,isServer:process.server},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
@@ -16,7 +30,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:18',message:'SSR no token redirect',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      return navigateTo('/login');
+      const redirectPath = getRedirectPath(to.path);
+      return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
 
     try {
@@ -49,7 +64,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       if (error.statusCode) {
         throw error;
       }
-      return navigateTo('/login');
+      const redirectPath = getRedirectPath(to.path);
+      return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
   } else {
     // クライアントサイドではストアの状態をチェック
@@ -96,7 +112,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:81',message:'Client user fetch failed',data:{errorMessage:error.message,statusCode:error.statusCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
         // #endregion
         // ユーザー情報の取得に失敗した場合、ログインページにリダイレクト
-        return navigateTo('/login');
+        const redirectPath = getRedirectPath(to.path);
+        return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
       }
     }
 
@@ -104,7 +121,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:69',message:'Client not authenticated redirect',data:{user:store.user,accessToken:store.accessToken},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
-      return navigateTo('/login');
+      const redirectPath = getRedirectPath(to.path);
+      return navigateTo(`/login?redirect=${encodeURIComponent(redirectPath)}`);
     }
 
     const { isAdministrator } = useAuth();
