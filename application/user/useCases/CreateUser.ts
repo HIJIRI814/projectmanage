@@ -21,17 +21,18 @@ export class CreateUser {
       uuidv4(),
       email,
       input.password,
-      input.name,
-      input.userType
+      input.name
     );
 
     const savedUser = await this.userRepository.save(user);
 
+    // UserOutputにはuserTypeが必要だが、UserCompanyで管理するため、デフォルト値としてCUSTOMERを返す
+    // 実際のuserTypeはUserCompanyから取得する必要がある
     return new UserOutput(
       savedUser.id,
       savedUser.email.toString(),
       savedUser.name,
-      savedUser.userType.toNumber(),
+      4, // UserType.CUSTOMER (デフォルト値)
       savedUser.createdAt,
       savedUser.updatedAt
     );

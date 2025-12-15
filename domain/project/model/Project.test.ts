@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Project } from './Project';
+import { ProjectVisibility } from './ProjectVisibility';
 
 describe('Project', () => {
   const projectId = 'test-project-id';
@@ -54,6 +55,8 @@ describe('Project', () => {
         projectId,
         projectName,
         projectDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedAt
       );
@@ -62,6 +65,8 @@ describe('Project', () => {
       expect(project.id).toBe(projectId);
       expect(project.name).toBe(projectName);
       expect(project.description).toBe(projectDescription);
+      expect(project.visibility.isPrivate()).toBe(true);
+      expect(project.companyIds).toEqual([]);
       expect(project.createdAt).toEqual(createdAt);
       expect(project.updatedAt).toEqual(updatedAt);
     });
@@ -74,6 +79,8 @@ describe('Project', () => {
         projectId,
         projectName,
         null,
+        ProjectVisibility.COMPANY_INTERNAL,
+        ['company-1'],
         createdAt,
         updatedAt
       );
@@ -82,6 +89,8 @@ describe('Project', () => {
       expect(project.id).toBe(projectId);
       expect(project.name).toBe(projectName);
       expect(project.description).toBeNull();
+      expect(project.visibility.isCompanyInternal()).toBe(true);
+      expect(project.companyIds).toEqual(['company-1']);
       expect(project.createdAt).toEqual(createdAt);
       expect(project.updatedAt).toEqual(updatedAt);
     });
@@ -94,6 +103,8 @@ describe('Project', () => {
         projectId,
         projectName,
         projectDescription,
+        ProjectVisibility.PUBLIC,
+        ['company-1', 'company-2'],
         createdAt,
         updatedAt
       );
@@ -101,6 +112,8 @@ describe('Project', () => {
       expect(project.createdAt.getTime()).not.toBe(project.updatedAt.getTime());
       expect(project.createdAt).toEqual(createdAt);
       expect(project.updatedAt).toEqual(updatedAt);
+      expect(project.visibility.isPublic()).toBe(true);
+      expect(project.companyIds).toEqual(['company-1', 'company-2']);
     });
   });
 

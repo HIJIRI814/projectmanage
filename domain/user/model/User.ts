@@ -8,7 +8,6 @@ export class User {
     public readonly email: Email,
     public readonly passwordHash: PasswordHash,
     public readonly name: string,
-    public readonly userType: UserTypeValue,
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}
@@ -17,20 +16,11 @@ export class User {
     id: string,
     email: Email,
     plainPassword: string,
-    name: string,
-    userType: UserType = UserType.CUSTOMER
+    name: string
   ): Promise<User> {
     const passwordHash = await PasswordHash.create(plainPassword);
     const now = new Date();
-    return new User(
-      id,
-      email,
-      passwordHash,
-      name,
-      new UserTypeValue(userType),
-      now,
-      now
-    );
+    return new User(id, email, passwordHash, name, now, now);
   }
 
   static reconstruct(
@@ -38,7 +28,6 @@ export class User {
     email: string,
     hashedPassword: string,
     name: string,
-    userType: number,
     createdAt: Date,
     updatedAt: Date
   ): User {
@@ -47,7 +36,6 @@ export class User {
       new Email(email),
       PasswordHash.fromHash(hashedPassword),
       name,
-      UserTypeValue.fromNumber(userType),
       createdAt,
       updatedAt
     );
@@ -57,8 +45,12 @@ export class User {
     return await this.passwordHash.verify(plainPassword);
   }
 
-  isAdministrator(): boolean {
-    return this.userType.isAdministrator();
+  // 会社でのユーザータイプを取得するメソッド（UserCompanyから取得する必要があるため、ここではシグネチャのみ）
+  // 実際の実装はリポジトリ層で行う
+  getUserTypeInCompany(companyId: string): UserTypeValue | null {
+    // このメソッドはUserCompanyリポジトリから取得する必要があるため、
+    // ここではnullを返す（実際の実装はアプリケーション層で行う）
+    return null;
   }
 }
 

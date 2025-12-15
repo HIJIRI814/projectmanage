@@ -2,18 +2,23 @@ import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRe
 import { CreateProject } from '../../../application/project/useCases/CreateProject';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
 import { CreateProjectInput } from '../../../application/project/dto/CreateProjectInput';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 import { UserType } from '../../../domain/user/model/UserType';
 import { z } from 'zod';
 
 const projectRepository = new ProjectRepositoryImpl();
 const createProjectUseCase = new CreateProject(projectRepository);
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const jwtService = new JwtService();
 
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
+  visibility: z.enum(['PRIVATE', 'COMPANY_INTERNAL', 'PUBLIC']).optional(),
+  companyIds: z.array(z.string()).optional(),
 });
 
 async function getCurrentUser(event: any) {
@@ -48,6 +53,15 @@ async function getCurrentUser(event: any) {
   }
 }
 
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
+
 function isAdministratorOrMember(userType: number): boolean {
   return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
 }
@@ -55,8 +69,9 @@ function isAdministratorOrMember(userType: number): boolean {
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
-  // 管理者・メンバーのみアクセス可能
-  if (!isAdministratorOrMember(currentUser.userType.toNumber())) {
+  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
+  const userType = await getUserTypeInAnyCompany(currentUser.id);
+  if (!userType || !isAdministratorOrMember(userType)) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden: Administrator or Member access required',
@@ -75,9 +90,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const visibility = validationResult.data.visibility
+      ? (validationResult.data.visibility as ProjectVisibility)
+      : ProjectVisibility.PRIVATE;
+
     const input = new CreateProjectInput(
       validationResult.data.name,
-      validationResult.data.description
+      validationResult.data.description,
+      visibility,
+      validationResult.data.companyIds
     );
 
     const result = await createProjectUseCase.execute(input);

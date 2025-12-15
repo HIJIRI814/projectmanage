@@ -1,4 +1,5 @@
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
 import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { LoginUser } from '../../../application/auth/useCases/LoginUser';
@@ -12,10 +13,12 @@ const loginSchema = z.object({
 
 // シングルトンインスタンス
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const authDomainService = new AuthDomainService();
 const jwtService = new JwtService();
 const loginUserUseCase = new LoginUser(
   userRepository,
+  userCompanyRepository,
   authDomainService,
   jwtService
 );

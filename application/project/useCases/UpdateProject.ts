@@ -1,5 +1,6 @@
 import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
 import { Project } from '../../../domain/project/model/Project';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 import { UpdateProjectInput } from '../dto/UpdateProjectInput';
 import { ProjectOutput } from '../dto/ProjectOutput';
 
@@ -16,6 +17,8 @@ export class UpdateProject {
       project.id,
       input.name || project.name,
       input.description !== undefined ? input.description : project.description,
+      input.visibility ? input.visibility : project.visibility.toString(),
+      input.companyIds !== undefined ? input.companyIds : project.companyIds,
       project.createdAt,
       new Date()
     );
@@ -26,6 +29,8 @@ export class UpdateProject {
       savedProject.id,
       savedProject.name,
       savedProject.description,
+      savedProject.visibility.toString(),
+      savedProject.companyIds,
       savedProject.createdAt,
       savedProject.updatedAt
     );

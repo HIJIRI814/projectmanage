@@ -1,11 +1,22 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { ListUsers } from '../../../../application/user/useCases/ListUsers';
 import { JwtService } from '../../../../infrastructure/auth/jwtService';
 import { UserType } from '../../../../domain/user/model/UserType';
 
 const userRepository = new UserRepositoryImpl();
-const listUsersUseCase = new ListUsers(userRepository);
+const userCompanyRepository = new UserCompanyRepositoryImpl();
+const listUsersUseCase = new ListUsers(userRepository, userCompanyRepository);
 const jwtService = new JwtService();
+
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
 
 async function getCurrentUser(event: any) {
   const accessTokenCookie = getCookie(event, 'accessToken');
@@ -20,7 +31,16 @@ async function getCurrentUser(event: any) {
     const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
     const user = await userRepository.findById(userId);
     
-    if (!user || !user.isAdministrator()) {
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
+    // UserCompanyからuserTypeを取得して管理者かチェック
+    const userType = await getUserTypeInAnyCompany(userId);
+    if (!userType || userType !== UserType.ADMINISTRATOR) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden: Administrator access required',

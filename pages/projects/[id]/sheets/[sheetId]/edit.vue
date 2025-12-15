@@ -120,7 +120,7 @@ const { user } = useAuth();
 
 // 管理者・メンバーのみアクセス可能
 const canManageProjects = computed(() => {
-  if (!user.value) return false;
+  if (!user.value || user.value.userType === null) return false;
   return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
 });
 

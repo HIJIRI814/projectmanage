@@ -13,6 +13,8 @@ export class ListProjects {
           project.id,
           project.name,
           project.description,
+          project.visibility.toString(),
+          project.companyIds,
           project.createdAt,
           project.updatedAt
         )

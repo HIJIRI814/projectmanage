@@ -3,6 +3,7 @@ import { UpdateProject } from './UpdateProject';
 import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
 import { UpdateProjectInput } from '../dto/UpdateProjectInput';
 import { Project } from '../../../domain/project/model/Project';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 
 describe('UpdateProject', () => {
   let updateProject: UpdateProject;
@@ -35,6 +36,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         originalDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -43,6 +46,8 @@ describe('UpdateProject', () => {
         projectId,
         updatedName,
         updatedDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedUpdatedAt
       );
@@ -73,6 +78,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         originalDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -81,6 +88,8 @@ describe('UpdateProject', () => {
         projectId,
         updatedName,
         originalDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedUpdatedAt
       );
@@ -104,6 +113,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         originalDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -112,6 +123,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         updatedDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedUpdatedAt
       );
@@ -148,6 +161,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         originalDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -156,6 +171,8 @@ describe('UpdateProject', () => {
         projectId,
         originalName,
         null,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedUpdatedAt
       );

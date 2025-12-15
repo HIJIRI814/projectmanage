@@ -34,22 +34,7 @@
           :disabled="isLoading"
         />
       </div>
-      <div class="form-group">
-        <label for="userType">種別</label>
-        <select 
-          id="userType" 
-          v-model="form.userType" 
-          :disabled="isLoading || isEditingSelf"
-        >
-          <option :value="1">管理者</option>
-          <option :value="2">メンバー</option>
-          <option :value="3">パートナー</option>
-          <option :value="4">顧客</option>
-        </select>
-        <p v-if="isEditingSelf" class="help-text">
-          管理者は自分のユーザー種別を変更できません
-        </p>
-      </div>
+      <!-- userTypeはUserCompanyで管理するため、ここでは削除 -->
       <div v-if="error" class="error-message">{{ error }}</div>
       <div class="form-actions">
         <button type="submit" :disabled="isLoading" class="submit-button">
@@ -79,7 +64,6 @@ const form = ref({
   email: '',
   password: '',
   name: '',
-  userType: 4,
 });
 
 const isLoading = ref(false);
@@ -99,7 +83,6 @@ const { data: user } = await useFetch(`/api/manage/users/${userId}`, {
         email: userData.email,
         password: '',
         name: userData.name,
-        userType: userData.userType,
       };
     }
     isLoadingUser.value = false;
@@ -113,7 +96,6 @@ watch(user, (newUser) => {
       email: newUser.email,
       password: '',
       name: newUser.name,
-      userType: newUser.userType,
     };
     isLoadingUser.value = false;
   }
@@ -123,20 +105,9 @@ const handleSubmit = async () => {
   isLoading.value = true;
   error.value = null;
 
-  // 自分自身の種別を変更しようとしている場合はエラー
-  if (isEditingSelf.value) {
-    const originalUserType = user.value?.userType;
-    if (form.value.userType !== originalUserType) {
-      error.value = '管理者は自分のユーザー種別を変更できません';
-      isLoading.value = false;
-      return;
-    }
-  }
-
   const updateData: any = {
     email: form.value.email,
     name: form.value.name,
-    userType: form.value.userType,
   };
 
   if (form.value.password) {

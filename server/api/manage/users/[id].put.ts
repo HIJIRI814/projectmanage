@@ -1,4 +1,5 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { UpdateUser } from '../../../../application/user/useCases/UpdateUser';
 import { JwtService } from '../../../../infrastructure/auth/jwtService';
 import { UpdateUserInput } from '../../../../application/user/dto/UpdateUserInput';
@@ -6,6 +7,7 @@ import { UserType } from '../../../../domain/user/model/UserType';
 import { z } from 'zod';
 
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const updateUserUseCase = new UpdateUser(userRepository);
 const jwtService = new JwtService();
 
@@ -13,8 +15,16 @@ const updateUserSchema = z.object({
   email: z.string().email('Invalid email format').optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   name: z.string().min(1, 'Name is required').optional(),
-  userType: z.number().int().min(1).max(4).optional(),
 });
+
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
 
 async function getCurrentUser(event: any) {
   const accessTokenCookie = getCookie(event, 'accessToken');
@@ -29,7 +39,16 @@ async function getCurrentUser(event: any) {
     const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
     const user = await userRepository.findById(userId);
     
-    if (!user || !user.isAdministrator()) {
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
+    // UserCompanyからuserTypeを取得して管理者かチェック
+    const userType = await getUserTypeInAnyCompany(userId);
+    if (!userType || userType !== UserType.ADMINISTRATOR) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden: Administrator access required',
@@ -75,8 +94,7 @@ export default defineEventHandler(async (event) => {
     const input = new UpdateUserInput(
       validationResult.data.email,
       validationResult.data.password,
-      validationResult.data.name,
-      validationResult.data.userType ? (validationResult.data.userType as UserType) : undefined
+      validationResult.data.name
     );
 
     const result = await updateUserUseCase.execute(id, input, currentUser.id);
@@ -97,12 +115,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (error.message === '管理者は自分自身のユーザー種別を変更できません') {
-      throw createError({
-        statusCode: 403,
-        statusMessage: error.message,
-      });
-    }
 
     if (error.statusCode) {
       throw error;

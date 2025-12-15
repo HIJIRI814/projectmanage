@@ -21,6 +21,34 @@
           :disabled="isLoading"
         ></textarea>
       </div>
+      <div class="form-group">
+        <label for="visibility">公開範囲</label>
+        <select id="visibility" v-model="form.visibility" :disabled="isLoading">
+          <option value="PRIVATE">プライベート</option>
+          <option value="COMPANY_INTERNAL">社内公開</option>
+          <option value="PUBLIC">公開</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="companyIds">所属会社（複数選択可）</label>
+        <div v-if="isLoadingCompanies" class="loading-text">読み込み中...</div>
+        <div v-else-if="companiesError" class="error-text">{{ companiesError }}</div>
+        <div v-else class="checkbox-group">
+          <label
+            v-for="company in companies"
+            :key="company.id"
+            class="checkbox-label"
+          >
+            <input
+              type="checkbox"
+              :value="company.id"
+              v-model="form.companyIds"
+              :disabled="isLoading"
+            />
+            {{ company.name }}
+          </label>
+        </div>
+      </div>
       <div v-if="error" class="error-message">{{ error }}</div>
       <div class="form-actions">
         <button type="submit" :disabled="isLoading" class="submit-button">
@@ -44,7 +72,7 @@ const { user } = useAuth();
 
 // 管理者・メンバーのみアクセス可能
 const canManageProjects = computed(() => {
-  if (!user.value) return false;
+  if (!user.value || user.value.userType === null) return false;
   return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
 });
 
@@ -59,10 +87,30 @@ if (process.client && !canManageProjects.value) {
 const form = ref({
   name: '',
   description: '',
+  visibility: 'PRIVATE' as 'PRIVATE' | 'COMPANY_INTERNAL' | 'PUBLIC',
+  companyIds: [] as string[],
 });
 
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+const isLoadingCompanies = ref(true);
+const companiesError = ref<string | null>(null);
+const companies = ref<any[]>([]);
+
+// 会社一覧を取得
+const { data: companiesData, error: companiesFetchError } = await useFetch('/api/companies');
+watch(companiesData, (newCompanies) => {
+  if (newCompanies) {
+    companies.value = newCompanies;
+    isLoadingCompanies.value = false;
+  }
+}, { immediate: true });
+watch(companiesFetchError, (err) => {
+  if (err) {
+    companiesError.value = err.message || '会社一覧の取得に失敗しました';
+    isLoadingCompanies.value = false;
+  }
+});
 
 const handleSubmit = async () => {
   isLoading.value = true;
@@ -74,6 +122,8 @@ const handleSubmit = async () => {
       body: {
         name: form.value.name,
         description: form.value.description || undefined,
+        visibility: form.value.visibility,
+        companyIds: form.value.companyIds.length > 0 ? form.value.companyIds : undefined,
       },
     });
     router.push('/projects');
@@ -187,6 +237,57 @@ textarea {
 
 .cancel-button:hover {
   background-color: #cbd5e0;
+}
+
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f9fafb;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.loading-text,
+.error-text {
+  padding: 8px;
+  font-size: 14px;
+}
+
+.error-text {
+  color: #e53e3e;
 }
 </style>
 

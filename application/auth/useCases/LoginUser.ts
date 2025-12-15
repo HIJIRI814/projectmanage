@@ -1,4 +1,5 @@
 import { IUserRepository } from '../../../domain/user/model/IUserRepository';
+import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
 import { Email } from '../../../domain/user/model/Email';
 import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
@@ -8,6 +9,7 @@ import { AuthResult } from '../dto/AuthResult';
 export class LoginUser {
   constructor(
     private userRepository: IUserRepository,
+    private userCompanyRepository: IUserCompanyRepository,
     private authDomainService: AuthDomainService,
     private jwtService: JwtService
   ) {}
@@ -31,6 +33,10 @@ export class LoginUser {
       throw new Error('Invalid credentials');
     }
 
+    // UserCompanyからuserTypeを取得（最初の会社のuserTypeを使用）
+    const userCompanies = await this.userCompanyRepository.findByUserId(user.id);
+    const userType = userCompanies.length > 0 ? userCompanies[0].userType.toNumber() : null;
+
     // JWT トークンの発行
     const accessToken = this.jwtService.generateAccessToken(user.id);
     const refreshToken = this.jwtService.generateRefreshToken(user.id);
@@ -39,7 +45,7 @@ export class LoginUser {
       id: user.id,
       email: user.email.toString(),
       name: user.name,
-      userType: user.userType.toNumber(),
+      userType,
     });
   }
 }

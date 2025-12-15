@@ -1,11 +1,17 @@
 import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
+import { GetProject } from '../../../application/project/useCases/GetProject';
+import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { ProjectOutput } from '../../../application/project/dto/ProjectOutput';
+import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
+import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
 import { UserType } from '../../../domain/user/model/UserType';
 
 const projectRepository = new ProjectRepositoryImpl();
+const getProjectUseCase = new GetProject(projectRepository);
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
+const projectAccessService = new ProjectAccessService(userCompanyRepository);
 const jwtService = new JwtService();
 
 async function getCurrentUser(event: any) {
@@ -40,20 +46,20 @@ async function getCurrentUser(event: any) {
   }
 }
 
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
+async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
+  const projectMember = await prismaClient.projectMember.findUnique({
+    where: {
+      projectId_userId: {
+        projectId,
+        userId,
+      },
+    },
+  });
+  return !!projectMember;
 }
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
-
-  // 管理者・メンバーのみアクセス可能
-  if (!isAdministratorOrMember(currentUser.userType.toNumber())) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required',
-    });
-  }
 
   const id = getRouterParam(event, 'id');
   if (!id) {
@@ -65,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const project = await projectRepository.findById(id);
-    
+
     if (!project) {
       throw createError({
         statusCode: 404,
@@ -73,10 +79,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // アクセス権限チェック
+    const isMember = await isProjectMember(currentUser.id, project.id);
+    const canAccess = await projectAccessService.canAccess(project, currentUser.id, isMember);
+
+    if (!canAccess) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Forbidden: You do not have access to this project',
+      });
+    }
+
     return new ProjectOutput(
       project.id,
       project.name,
       project.description,
+      project.visibility.toString(),
+      project.companyIds,
       project.createdAt,
       project.updatedAt
     );

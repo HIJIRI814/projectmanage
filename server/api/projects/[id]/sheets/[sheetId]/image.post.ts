@@ -4,11 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl';
 import { JwtService } from '~/infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { UserType } from '~/domain/user/model/UserType';
 import { Sheet } from '~/domain/sheet/model/Sheet';
 
 const sheetRepository = new SheetRepositoryImpl();
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const jwtService = new JwtService();
 
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
@@ -46,6 +48,15 @@ async function getCurrentUser(event: any) {
   }
 }
 
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
+
 function isAdministratorOrMember(userType: number): boolean {
   return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
 }
@@ -71,8 +82,9 @@ function getExtension(filename?: string, type?: string): string {
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
-  // 管理者・メンバーのみアクセス可能
-  if (!isAdministratorOrMember(currentUser.userType.toNumber())) {
+  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
+  const userType = await getUserTypeInAnyCompany(currentUser.id);
+  if (!userType || !isAdministratorOrMember(userType)) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden: Administrator or Member access required',

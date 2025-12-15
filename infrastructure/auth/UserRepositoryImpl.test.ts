@@ -113,7 +113,6 @@ describe('UserRepositoryImpl', () => {
         userEmail,
         hashedPassword,
         userName,
-        UserType.CUSTOMER,
         createdAt,
         updatedAt
       );
@@ -123,9 +122,9 @@ describe('UserRepositoryImpl', () => {
         email: userEmail,
         passwordHash: hashedPassword,
         name: userName,
-        userType: 4,
         createdAt,
         updatedAt,
+        userCompanies: [],
       };
 
       vi.mocked(prismaClient.user.upsert).mockResolvedValue(mockUserData);
@@ -140,7 +139,6 @@ describe('UserRepositoryImpl', () => {
           email: userEmail,
           passwordHash: hashedPassword,
           name: userName,
-          userType: 4,
           updatedAt: expect.any(Date),
         },
         create: {
@@ -148,7 +146,6 @@ describe('UserRepositoryImpl', () => {
           email: userEmail,
           passwordHash: hashedPassword,
           name: userName,
-          userType: 4,
           createdAt,
           updatedAt,
         },

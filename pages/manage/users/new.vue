@@ -33,15 +33,7 @@
           :disabled="isLoading"
         />
       </div>
-      <div class="form-group">
-        <label for="userType">種別</label>
-        <select id="userType" v-model="form.userType" :disabled="isLoading">
-          <option :value="1">管理者</option>
-          <option :value="2">メンバー</option>
-          <option :value="3">パートナー</option>
-          <option :value="4">顧客</option>
-        </select>
-      </div>
+      <!-- userTypeはUserCompanyで管理するため、ここでは削除 -->
       <div v-if="error" class="error-message">{{ error }}</div>
       <div class="form-actions">
         <button type="submit" :disabled="isLoading" class="submit-button">
@@ -64,7 +56,6 @@ const form = ref({
   email: '',
   password: '',
   name: '',
-  userType: 4,
 });
 
 const isLoading = ref(false);

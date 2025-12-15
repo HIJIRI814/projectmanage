@@ -1,19 +1,27 @@
 import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
 import { UpdateProject } from '../../../application/project/useCases/UpdateProject';
+import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
 import { UpdateProjectInput } from '../../../application/project/dto/UpdateProjectInput';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 import { UserType } from '../../../domain/user/model/UserType';
+import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
 import { z } from 'zod';
 
 const projectRepository = new ProjectRepositoryImpl();
 const updateProjectUseCase = new UpdateProject(projectRepository);
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
+const projectAccessService = new ProjectAccessService(userCompanyRepository);
 const jwtService = new JwtService();
 
 const updateProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
   description: z.string().optional(),
+  visibility: z.enum(['PRIVATE', 'COMPANY_INTERNAL', 'PUBLIC']).optional(),
+  companyIds: z.array(z.string()).optional(),
 });
 
 async function getCurrentUser(event: any) {
@@ -48,26 +56,45 @@ async function getCurrentUser(event: any) {
   }
 }
 
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
+async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
+  const projectMember = await prismaClient.projectMember.findUnique({
+    where: {
+      projectId_userId: {
+        projectId,
+        userId,
+      },
+    },
+  });
+  return !!projectMember;
 }
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
-
-  // 管理者・メンバーのみアクセス可能
-  if (!isAdministratorOrMember(currentUser.userType.toNumber())) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden: Administrator or Member access required',
-    });
-  }
 
   const id = getRouterParam(event, 'id');
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Project ID is required',
+    });
+  }
+
+  // プロジェクトの存在確認とアクセス権限チェック
+  const project = await projectRepository.findById(id);
+  if (!project) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Project not found',
+    });
+  }
+
+  const isMember = await isProjectMember(currentUser.id, project.id);
+  const canEdit = await projectAccessService.canEdit(project, currentUser.id, isMember);
+
+  if (!canEdit) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden: You do not have permission to edit this project',
     });
   }
 
@@ -83,9 +110,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const visibility = validationResult.data.visibility
+      ? (validationResult.data.visibility as ProjectVisibility)
+      : undefined;
+
     const input = new UpdateProjectInput(
       validationResult.data.name,
-      validationResult.data.description
+      validationResult.data.description,
+      visibility,
+      validationResult.data.companyIds
     );
 
     const result = await updateProjectUseCase.execute(id, input);

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ListProjects } from './ListProjects';
 import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
 import { Project } from '../../../domain/project/model/Project';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 
 describe('ListProjects', () => {
   let listProjects: ListProjects;
@@ -45,6 +46,8 @@ describe('ListProjects', () => {
         projectId1,
         projectName1,
         projectDescription1,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt1,
         updatedAt1
       );
@@ -52,6 +55,8 @@ describe('ListProjects', () => {
         projectId2,
         projectName2,
         projectDescription2,
+        ProjectVisibility.COMPANY_INTERNAL,
+        ['company-1'],
         createdAt2,
         updatedAt2
       );
@@ -87,6 +92,8 @@ describe('ListProjects', () => {
         projectId1,
         projectName1,
         null,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedAt
       );

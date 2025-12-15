@@ -9,6 +9,7 @@ vi.mock('uuid', () => ({
 const mockFindById = vi.fn();
 const mockSave = vi.fn();
 const mockFindUserById = vi.fn();
+const mockFindByUserId = vi.fn();
 const mockVerifyAccessToken = vi.fn();
 const mockMkdir = vi.fn();
 const mockWriteFile = vi.fn();
@@ -36,6 +37,12 @@ vi.mock('~/infrastructure/sheet/sheetRepositoryImpl', () => ({
 vi.mock('~/infrastructure/auth/userRepositoryImpl', () => ({
   UserRepositoryImpl: class {
     findById = mockFindUserById;
+  },
+}));
+
+vi.mock('~/infrastructure/user/userCompanyRepositoryImpl', () => ({
+  UserCompanyRepositoryImpl: class {
+    findByUserId = mockFindByUserId;
   },
 }));
 
@@ -69,10 +76,17 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
     mockVerifyAccessToken.mockReturnValue({ userId: 'user-1' });
     mockFindUserById.mockResolvedValue({
       id: 'user-1',
-      userType: {
-        toNumber: () => UserType.ADMINISTRATOR,
-      },
     });
+    mockFindByUserId.mockResolvedValue([
+      {
+        id: 'user-company-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        userType: {
+          toNumber: () => UserType.ADMINISTRATOR,
+        },
+      },
+    ]);
     mockMkdir.mockResolvedValue(undefined);
     mockWriteFile.mockResolvedValue(undefined);
 

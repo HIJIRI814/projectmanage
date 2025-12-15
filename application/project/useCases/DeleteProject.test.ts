@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DeleteProject } from './DeleteProject';
 import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
 import { Project } from '../../../domain/project/model/Project';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 
 describe('DeleteProject', () => {
   let deleteProject: DeleteProject;
@@ -31,6 +32,8 @@ describe('DeleteProject', () => {
         projectId,
         projectName,
         projectDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedAt
       );

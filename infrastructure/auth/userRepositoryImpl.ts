@@ -18,7 +18,6 @@ export class UserRepositoryImpl implements IUserRepository {
         userData.email,
         userData.passwordHash,
         userData.name,
-        userData.userType,
         userData.createdAt,
         userData.updatedAt
       );
@@ -38,7 +37,6 @@ export class UserRepositoryImpl implements IUserRepository {
         userData.email,
         userData.passwordHash,
         userData.name,
-        userData.userType,
         userData.createdAt,
         userData.updatedAt
       );
@@ -51,7 +49,6 @@ export class UserRepositoryImpl implements IUserRepository {
         email: user.email.toString(),
         passwordHash: user.passwordHash.toString(),
         name: user.name,
-        userType: user.userType.toNumber(),
         updatedAt: new Date(),
       },
       create: {
@@ -59,7 +56,6 @@ export class UserRepositoryImpl implements IUserRepository {
         email: user.email.toString(),
         passwordHash: user.passwordHash.toString(),
         name: user.name,
-        userType: user.userType.toNumber(),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -70,7 +66,6 @@ export class UserRepositoryImpl implements IUserRepository {
         userData.email,
         userData.passwordHash,
         userData.name,
-        userData.userType,
         userData.createdAt,
         userData.updatedAt
       );
@@ -87,7 +82,6 @@ export class UserRepositoryImpl implements IUserRepository {
             userData.email,
             userData.passwordHash,
             userData.name,
-            userData.userType,
             userData.createdAt,
             userData.updatedAt
           )

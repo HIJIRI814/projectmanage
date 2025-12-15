@@ -1,12 +1,17 @@
 import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
 import { ListProjects } from '../../../application/project/useCases/ListProjects';
+import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
 import { JwtService } from '../../../infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
+import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
 import { UserType } from '../../../domain/user/model/UserType';
 
 const projectRepository = new ProjectRepositoryImpl();
 const listProjectsUseCase = new ListProjects(projectRepository);
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
+const projectAccessService = new ProjectAccessService(userCompanyRepository);
 const jwtService = new JwtService();
 
 async function getCurrentUser(event: any) {
@@ -41,20 +46,47 @@ async function getCurrentUser(event: any) {
   }
 }
 
-function isAdministratorOrMember(userType: number): boolean {
-  return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
+
+async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
+  const projectMember = await prismaClient.projectMember.findUnique({
+    where: {
+      projectId_userId: {
+        projectId,
+        userId,
+      },
+    },
+  });
+  return !!projectMember;
 }
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
-  // 管理者・メンバーのみ全プロジェクトを返す
-  // パートナー・顧客は空配列を返す
-  if (isAdministratorOrMember(currentUser.userType.toNumber())) {
-    const projects = await listProjectsUseCase.execute();
-    return projects;
+  const allProjects = await listProjectsUseCase.execute();
+  const accessibleProjects = [];
+
+  for (const project of allProjects) {
+    const projectEntity = await projectRepository.findById(project.id);
+    if (!projectEntity) {
+      continue;
+    }
+
+    const isMember = await isProjectMember(currentUser.id, project.id);
+    const canAccess = await projectAccessService.canAccess(projectEntity, currentUser.id, isMember);
+
+    if (canAccess) {
+      accessibleProjects.push(project);
+    }
   }
 
-  return [];
+  return accessibleProjects;
 });
 

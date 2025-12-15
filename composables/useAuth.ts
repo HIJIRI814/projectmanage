@@ -7,7 +7,12 @@ interface User {
   id: string;
   email: string;
   name: string;
-  userType: number;
+  userType: number | null;
+  userCompanies?: Array<{
+    id: string;
+    companyId: string;
+    userType: number;
+  }>;
 }
 
 export const useAuth = () => {

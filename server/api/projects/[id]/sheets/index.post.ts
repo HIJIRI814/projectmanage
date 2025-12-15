@@ -2,6 +2,7 @@ import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl'
 import { CreateSheet } from '~/application/sheet/useCases/CreateSheet';
 import { JwtService } from '~/infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { CreateSheetInput } from '~/application/sheet/dto/CreateSheetInput';
 import { UserType } from '~/domain/user/model/UserType';
 import { z } from 'zod';
@@ -9,6 +10,7 @@ import { z } from 'zod';
 const sheetRepository = new SheetRepositoryImpl();
 const createSheetUseCase = new CreateSheet(sheetRepository);
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const jwtService = new JwtService();
 
 const createSheetSchema = z.object({
@@ -50,6 +52,15 @@ async function getCurrentUser(event: any) {
   }
 }
 
+async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return null;
+  }
+  // 最初の会社のuserTypeを返す（デフォルトとして）
+  return userCompanies[0].userType.toNumber();
+}
+
 function isAdministratorOrMember(userType: number): boolean {
   return userType === UserType.ADMINISTRATOR || userType === UserType.MEMBER;
 }
@@ -57,8 +68,9 @@ function isAdministratorOrMember(userType: number): boolean {
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
 
-  // 管理者・メンバーのみアクセス可能
-  if (!isAdministratorOrMember(currentUser.userType.toNumber())) {
+  // ユーザーのuserTypeを取得（最初の会社のuserTypeを使用）
+  const userType = await getUserTypeInAnyCompany(currentUser.id);
+  if (!userType || !isAdministratorOrMember(userType)) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden: Administrator or Member access required',

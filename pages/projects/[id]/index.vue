@@ -73,7 +73,7 @@ const projectId = route.params.id as string;
 const { user } = useAuth();
 
 const canManageProjects = computed(() => {
-  if (!user.value) return false;
+  if (!user.value || user.value.userType === null) return false;
   return user.value.userType === UserType.ADMINISTRATOR || user.value.userType === UserType.MEMBER;
 });
 

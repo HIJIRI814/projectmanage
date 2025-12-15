@@ -3,6 +3,7 @@ import { CreateProject } from './CreateProject';
 import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
 import { CreateProjectInput } from '../dto/CreateProjectInput';
 import { Project } from '../../../domain/project/model/Project';
+import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
 
 describe('CreateProject', () => {
   let createProject: CreateProject;
@@ -30,6 +31,8 @@ describe('CreateProject', () => {
         'generated-id',
         projectName,
         projectDescription,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedAt
       );
@@ -60,6 +63,8 @@ describe('CreateProject', () => {
         'generated-id',
         projectName,
         null,
+        ProjectVisibility.PRIVATE,
+        [],
         createdAt,
         updatedAt
       );

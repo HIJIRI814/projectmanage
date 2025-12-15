@@ -41,17 +41,20 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:25',message:'SSR token verified',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      const { UserRepositoryImpl } = await import('../infrastructure/auth/userRepositoryImpl');
-      const userRepository = new UserRepositoryImpl();
-      const user = await userRepository.findById(userId);
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:26',message:'SSR user found',data:{userExists:!!user,isAdmin:user?.isAdministrator()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
-      if (!user || !user.isAdministrator()) {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware/admin.ts:29',message:'SSR admin check failed',data:{userExists:!!user,isAdmin:user?.isAdministrator()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
+      // SSR時はAPIからユーザー情報を取得してuserTypeをチェック
+      try {
+        const userData = await $fetch('/api/auth/me');
+        const { UserType } = await import('../domain/user/model/UserType');
+        if (!userData || userData.userType !== UserType.ADMINISTRATOR) {
+          throw createError({
+            statusCode: 403,
+            statusMessage: 'Forbidden: Administrator access required',
+          });
+        }
+      } catch (error: any) {
+        if (error.statusCode) {
+          throw error;
+        }
         throw createError({
           statusCode: 403,
           statusMessage: 'Forbidden: Administrator access required',
