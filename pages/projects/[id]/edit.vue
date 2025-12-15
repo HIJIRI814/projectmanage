@@ -1,135 +1,202 @@
 <template>
-  <div class="project-form-container">
-    <h1>プロジェクト編集</h1>
-    <div v-if="isLoadingProject" class="loading">読み込み中...</div>
-    <div v-else-if="projectError" class="error">{{ projectError }}</div>
-    <form v-else @submit.prevent="handleSubmit" class="project-form">
-      <div class="form-group">
-        <label for="name">名前</label>
-        <input
-          type="text"
-          id="name"
-          v-model="form.name"
-          required
-          :disabled="isLoading"
-        />
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">プロジェクト編集</h1>
+        <p class="text-muted-foreground mt-1">
+          プロジェクト情報を編集します
+        </p>
       </div>
-      <div class="form-group">
-        <label for="description">説明</label>
-        <textarea
-          id="description"
-          v-model="form.description"
-          rows="4"
-          :disabled="isLoading"
-        ></textarea>
+
+      <div v-if="isLoadingProject" class="flex items-center justify-center py-12">
+        <div class="text-muted-foreground">読み込み中...</div>
       </div>
-      <div class="form-group">
-        <label for="visibility">公開範囲</label>
-        <select id="visibility" v-model="form.visibility" :disabled="isLoading">
-          <option value="PRIVATE">プライベート</option>
-          <option value="COMPANY_INTERNAL">社内公開</option>
-          <option value="PUBLIC">公開</option>
-        </select>
+      <div v-else-if="projectError" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+        {{ projectError }}
       </div>
-      <div class="form-group">
-        <label for="companyIds">所属会社（複数選択可）</label>
-        <div v-if="isLoadingCompanies" class="loading-text">読み込み中...</div>
-        <div v-else-if="companiesError" class="error-text">{{ companiesError }}</div>
-        <div v-else class="checkbox-group">
-          <label
-            v-for="company in companies"
-            :key="company.id"
-            class="checkbox-label"
-          >
-            <input
-              type="checkbox"
-              :value="company.id"
-              v-model="form.companyIds"
-              :disabled="isLoading"
-            />
-            {{ company.name }}
-          </label>
-        </div>
-      </div>
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div class="form-actions">
-        <button type="submit" :disabled="isLoading" class="submit-button">
-          {{ isLoading ? '更新中...' : '更新' }}
-        </button>
-        <NuxtLink to="/projects" class="cancel-button">キャンセル</NuxtLink>
-      </div>
-    </form>
-  </div>
+      <Card v-else>
+        <CardContent class="pt-6">
+          <form @submit.prevent="handleSubmit" class="space-y-6">
+            <FormField id="name" label="名前" :error="error" required>
+              <Input
+                id="name"
+                v-model="form.name"
+                type="text"
+                required
+                :disabled="isLoading"
+                :error="!!error"
+                placeholder="プロジェクト名を入力"
+              />
+            </FormField>
+
+            <FormField id="description" label="説明">
+              <Textarea
+                id="description"
+                v-model="form.description"
+                rows="4"
+                :disabled="isLoading"
+                placeholder="プロジェクトの説明を入力（任意）"
+              />
+            </FormField>
+
+            <FormField id="visibility" label="公開範囲" required>
+              <Select id="visibility" v-model="form.visibility" :disabled="isLoading">
+                <option value="PRIVATE">プライベート</option>
+                <option value="COMPANY_INTERNAL">社内公開</option>
+                <option value="PUBLIC">公開</option>
+              </Select>
+            </FormField>
+
+            <FormField id="companyIds" label="所属会社（複数選択可）">
+              <div v-if="isLoadingCompanies" class="text-sm text-muted-foreground">
+                読み込み中...
+              </div>
+              <div v-else-if="companiesError" class="text-sm text-destructive">
+                {{ companiesError }}
+              </div>
+              <div v-else class="space-y-2 rounded-md border p-4">
+                <label
+                  v-for="company in companies"
+                  :key="company.id"
+                  class="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    :value="company.id"
+                    v-model="form.companyIds"
+                    :disabled="isLoading"
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span class="text-sm">{{ company.name }}</span>
+                </label>
+                <p v-if="companies.length === 0" class="text-sm text-muted-foreground">
+                  管理者として登録されている会社がありません
+                </p>
+              </div>
+            </FormField>
+
+            <div v-if="error" class="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              {{ error }}
+            </div>
+
+            <div class="flex gap-4">
+              <Button type="submit" :disabled="isLoading" class="flex-1">
+                <span v-if="isLoading">更新中...</span>
+                <span v-else>更新</span>
+              </Button>
+              <Button variant="outline" as-child>
+                <NuxtLink to="/projects">キャンセル</NuxtLink>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth',
-});
+})
 
-import { UserType } from '~/domain/user/model/UserType';
+import { UserType } from '~/domain/user/model/UserType'
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import Card from '~/components/atoms/Card.vue'
+import CardContent from '~/components/atoms/CardContent.vue'
+import FormField from '~/components/molecules/FormField.vue'
+import Input from '~/components/atoms/Input.vue'
+import Textarea from '~/components/atoms/Textarea.vue'
+import Select from '~/components/atoms/Select.vue'
+import Button from '~/components/atoms/Button.vue'
 
-const route = useRoute();
-const router = useRouter();
-const projectId = route.params.id as string;
+const route = useRoute()
+const router = useRouter()
+const projectId = route.params.id as string
 
-const { user } = useAuth();
+const { user } = useAuth()
 
 const form = ref({
   name: '',
   description: '',
   visibility: 'PRIVATE' as 'PRIVATE' | 'COMPANY_INTERNAL' | 'PUBLIC',
   companyIds: [] as string[],
-});
+})
 
-const isLoading = ref(false);
-const isLoadingProject = ref(true);
-const error = ref<string | null>(null);
-const projectError = ref<string | null>(null);
-const isLoadingCompanies = ref(true);
-const companiesError = ref<string | null>(null);
-const companies = ref<any[]>([]);
-const project = ref<any>(null);
+const isLoading = ref(false)
+const isLoadingProject = ref(true)
+const error = ref<string | null>(null)
+const projectError = ref<string | null>(null)
+const isLoadingCompanies = ref(true)
+const companiesError = ref<string | null>(null)
+const companies = ref<any[]>([])
+const project = ref<any>(null)
 
 // 会社一覧を取得（管理者となっている会社のみ）
-const { data: companiesData, error: companiesFetchError } = await useFetch('/api/companies');
+const { data: companiesData, error: companiesFetchError, isLoading: isLoadingCompaniesData } = useApiFetch('/api/companies')
 watch(companiesData, (newCompanies) => {
   if (newCompanies) {
     // 管理者となっている会社のみをフィルタリング
     companies.value = newCompanies.filter(
       (company: any) => company.userType === UserType.ADMINISTRATOR
-    );
-    isLoadingCompanies.value = false;
+    )
+    isLoadingCompanies.value = false
   }
-}, { immediate: true });
+}, { immediate: true })
 watch(companiesFetchError, (err) => {
   if (err) {
-    companiesError.value = err.message || '会社一覧の取得に失敗しました';
-    isLoadingCompanies.value = false;
+    companiesError.value = err || '会社一覧の取得に失敗しました'
+    isLoadingCompanies.value = false
   }
-});
+})
+watch(isLoadingCompaniesData, (loading) => {
+  isLoadingCompanies.value = loading
+})
+
+const { data: projectData, isLoading: isLoadingProjectData, error: projectErrorData } = useApiFetch(`/api/projects/${projectId}`)
+
+// project.value の変化を監視してフォームを更新（SSR/CSRの両方に対応）
+watch(projectData, (newProject) => {
+  if (newProject) {
+    project.value = newProject
+    form.value = {
+      name: newProject.name,
+      description: newProject.description || '',
+      visibility: newProject.visibility || 'PRIVATE',
+      companyIds: newProject.companyIds || [],
+    }
+    isLoadingProject.value = false
+  }
+}, { immediate: true })
+watch(isLoadingProjectData, (loading) => {
+  isLoadingProject.value = loading
+})
+watch(projectErrorData, (err) => {
+  if (err) {
+    projectError.value = err
+    isLoadingProject.value = false
+  }
+})
 
 // プロジェクトに所属する会社のいずれかで管理者であるかをチェック
-// プライベートプロジェクト（companyIdsが空）の場合は、API側でプロジェクトメンバーかどうかをチェックするため、ここでは常にtrueを返す
 const canEditProject = computed(() => {
-  if (!user.value || !project.value) return false;
-  
+  if (!user.value || !project.value) return false
+
   // プライベートプロジェクト（companyIdsが空または存在しない）の場合
   if (!project.value.companyIds || project.value.companyIds.length === 0) {
-    // API側でプロジェクトメンバーかどうかをチェックするため、ここではtrueを返す
-    return true;
+    return true
   }
-  
+
   // 社内公開プロジェクトの場合、プロジェクトに所属する会社のいずれかで管理者であるかをチェック
-  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false;
-  
+  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false
+
   return project.value.companyIds.some((companyId: string) => {
     const userCompany = user.value?.userCompanies?.find(
       (uc) => uc.companyId === companyId
-    );
-    return userCompany?.userType === UserType.ADMINISTRATOR;
-  });
-});
+    )
+    return userCompany?.userType === UserType.ADMINISTRATOR
+  })
+})
 
 // アクセス権限チェック（プロジェクト情報取得後に実行）
 watch(project, (newProject) => {
@@ -137,50 +204,17 @@ watch(project, (newProject) => {
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden: Administrator access required for this project',
-    });
+    })
   }
-}, { immediate: true });
-
-const { data: projectData } = await useFetch(`/api/projects/${projectId}`, {
-  onResponseError({ response }) {
-    projectError.value = response.statusText || 'プロジェクトの取得に失敗しました';
-    isLoadingProject.value = false;
-  },
-  onResponse({ response }) {
-    if (response._data) {
-      const projectData = response._data;
-      project.value = projectData;
-      form.value = {
-        name: projectData.name,
-        description: projectData.description || '',
-        visibility: projectData.visibility || 'PRIVATE',
-        companyIds: projectData.companyIds || [],
-      };
-    }
-    isLoadingProject.value = false;
-  },
-});
-
-// project.value の変化を監視してフォームを更新（SSR/CSRの両方に対応）
-watch(projectData, (newProject) => {
-  if (newProject) {
-    project.value = newProject;
-    form.value = {
-      name: newProject.name,
-      description: newProject.description || '',
-      visibility: newProject.visibility || 'PRIVATE',
-      companyIds: newProject.companyIds || [],
-    };
-    isLoadingProject.value = false;
-  }
-}, { immediate: true });
+}, { immediate: true })
 
 const handleSubmit = async () => {
-  isLoading.value = true;
-  error.value = null;
+  isLoading.value = true
+  error.value = null
 
   try {
-    await $fetch(`/api/projects/${projectId}`, {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/projects/${projectId}`, {
       method: 'PUT',
       body: {
         name: form.value.name,
@@ -188,180 +222,12 @@ const handleSubmit = async () => {
         visibility: form.value.visibility,
         companyIds: form.value.companyIds.length > 0 ? form.value.companyIds : undefined,
       },
-    });
-    router.push('/projects');
+    })
+    router.push('/projects')
   } catch (err: any) {
-    error.value = err.data?.message || '更新に失敗しました';
+    error.value = err.message || '更新に失敗しました'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 </script>
-
-<style scoped>
-.project-form-container {
-  padding: 40px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-  margin-bottom: 30px;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.project-form {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 600;
-}
-
-input[type='text'],
-textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.error-message {
-  color: #e53e3e;
-  margin-bottom: 20px;
-  padding: 12px;
-  background-color: #fee;
-  border-radius: 6px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 30px;
-}
-
-.submit-button {
-  flex: 1;
-  padding: 12px;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #5a67d8;
-}
-
-.submit-button:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-}
-
-.cancel-button {
-  padding: 12px 24px;
-  background-color: #e2e8f0;
-  color: #4a5568;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-  transition: background-color 0.3s;
-}
-
-.cancel-button:hover {
-  background-color: #cbd5e0;
-}
-
-select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.checkbox-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #f9fafb;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-weight: normal;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
-  cursor: pointer;
-}
-
-.loading-text,
-.error-text {
-  padding: 8px;
-  font-size: 14px;
-}
-
-.error-text {
-  color: #e53e3e;
-}
-</style>
-

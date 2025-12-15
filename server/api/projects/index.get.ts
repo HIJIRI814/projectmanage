@@ -68,25 +68,37 @@ async function isProjectMember(userId: string, projectId: string): Promise<boole
 }
 
 export default defineEventHandler(async (event) => {
-  const currentUser = await getCurrentUser(event);
+  try {
+    const currentUser = await getCurrentUser(event);
+    console.log(`[Projects API] Current user: ${currentUser.id} (${currentUser.email})`);
 
-  const allProjects = await listProjectsUseCase.execute();
-  const accessibleProjects = [];
+    const allProjects = await listProjectsUseCase.execute();
+    console.log(`[Projects API] Total projects: ${allProjects.length}`);
+    
+    const accessibleProjects = [];
 
-  for (const project of allProjects) {
-    const projectEntity = await projectRepository.findById(project.id);
-    if (!projectEntity) {
-      continue;
+    for (const project of allProjects) {
+      const projectEntity = await projectRepository.findById(project.id);
+      if (!projectEntity) {
+        console.log(`[Projects API] Project ${project.id} not found in repository`);
+        continue;
+      }
+
+      const isMember = await isProjectMember(currentUser.id, project.id);
+      const canAccess = await projectAccessService.canAccess(projectEntity, currentUser.id, isMember);
+      
+      console.log(`[Projects API] Project ${project.id}: visibility=${projectEntity.visibility.toString()}, isMember=${isMember}, canAccess=${canAccess}, companyIds=${projectEntity.companyIds.join(',')}`);
+
+      if (canAccess) {
+        accessibleProjects.push(project);
+      }
     }
 
-    const isMember = await isProjectMember(currentUser.id, project.id);
-    const canAccess = await projectAccessService.canAccess(projectEntity, currentUser.id, isMember);
-
-    if (canAccess) {
-      accessibleProjects.push(project);
-    }
+    console.log(`[Projects API] Accessible projects: ${accessibleProjects.length}`);
+    return accessibleProjects;
+  } catch (error: any) {
+    console.error('[Projects API] Error:', error);
+    throw error;
   }
-
-  return accessibleProjects;
 });
 

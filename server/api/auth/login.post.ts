@@ -30,10 +30,12 @@ export default defineEventHandler(async (event) => {
     // バリデーション
     const validationResult = loginSchema.safeParse(body);
     if (!validationResult.success) {
+      const errors = validationResult.error.issues || [];
+      const errorMessages = errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
       throw createError({
         statusCode: 400,
-        statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        statusMessage: `Validation error: ${errorMessages}`,
+        data: errors,
       });
     }
 
@@ -43,12 +45,22 @@ export default defineEventHandler(async (event) => {
     // ユースケースの実行
     const result = await loginUserUseCase.execute(input);
 
+    // サーバー側でクッキーを設定
+    setCookie(event, 'accessToken', result.accessToken, {
+      maxAge: 60 * 15, // 15分
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      httpOnly: false, // クライアント側からアクセス可能にする
+    });
+
     return {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       user: result.user,
     };
   } catch (error: any) {
+    console.error('Login error:', error);
+    
     if (error.message === 'Invalid credentials') {
       throw createError({
         statusCode: 401,
@@ -62,7 +74,8 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal server error',
+      statusMessage: `Internal server error: ${error.message || 'Unknown error'}`,
+      data: { originalError: error.message, stack: error.stack },
     });
   }
 });

@@ -1,168 +1,112 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <h1>ログイン</h1>
-      <form @submit.prevent="handleLogin">
-        <div class="form-group">
-          <label for="email">メールアドレス</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="example@email.com"
-            required
-            :disabled="isLoading"
-          />
-        </div>
-        <div class="form-group">
-          <label for="password">パスワード</label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            placeholder="パスワードを入力"
-            required
-            :disabled="isLoading"
-          />
-        </div>
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
-        <button type="submit" :disabled="isLoading" class="login-button">
-          {{ isLoading ? 'ログイン中...' : 'ログイン' }}
-        </button>
-      </form>
-    </div>
-  </div>
+  <AuthLayout title="ログイン" description="アカウントにログインしてください">
+    <form @submit.prevent="handleLogin" class="space-y-4">
+      <FormField
+        id="email"
+        label="メールアドレス"
+        :error="error || undefined"
+        required
+      >
+        <Input
+          id="email"
+          v-model="email"
+          type="email"
+          placeholder="example@email.com"
+          required
+          :disabled="isLoading"
+          :error="!!error"
+        />
+      </FormField>
+
+      <FormField
+        id="password"
+        label="パスワード"
+        required
+      >
+        <Input
+          id="password"
+          v-model="password"
+          type="password"
+          placeholder="パスワードを入力"
+          required
+          :disabled="isLoading"
+        />
+      </FormField>
+
+      <div v-if="error" class="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+        {{ error }}
+      </div>
+
+      <Button type="submit" :disabled="isLoading" class="w-full">
+        <span v-if="isLoading">ログイン中...</span>
+        <span v-else>ログイン</span>
+      </Button>
+
+      <div class="text-center text-sm text-muted-foreground">
+        アカウントをお持ちでない方は
+        <NuxtLink to="/signup" class="text-primary underline-offset-4 hover:underline">
+          サインアップ
+        </NuxtLink>
+      </div>
+    </form>
+  </AuthLayout>
 </template>
 
 <script setup lang="ts">
 // ゲスト専用ページとしてmiddlewareを適用
 definePageMeta({
   middleware: 'guest',
-});
+})
 
-const route = useRoute();
-const router = useRouter();
-const { login, isLoading, error } = useAuth();
+import AuthLayout from '~/components/templates/AuthLayout.vue'
+import FormField from '~/components/molecules/FormField.vue'
+import Input from '~/components/atoms/Input.vue'
+import Button from '~/components/atoms/Button.vue'
 
-const email = ref('');
-const password = ref('');
+const route = useRoute()
+const router = useRouter()
+const { setTokens, setUser } = useAuth()
 
-// 安全なリダイレクトパスを検証する関数
-const validateRedirectPath = (path: string | undefined): string | null => {
-  if (!path) {
-    return null;
-  }
-  // 相対パスで、かつ/で始まる場合のみ許可（セキュリティ対策）
-  if (path.startsWith('/') && !path.startsWith('//') && !path.startsWith('http://') && !path.startsWith('https://')) {
-    return path;
-  }
-  // 不正なパスの場合はnullを返す（デフォルトの/projectsにリダイレクト）
-  return null;
-};
+const email = ref('')
+const password = ref('')
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 const handleLogin = async () => {
+  isLoading.value = true
+  error.value = null
   try {
-    await login(email.value, password.value);
-    // クエリパラメータからredirectを取得
-    const redirectParam = route.query.redirect as string | undefined;
-    const redirectPath = validateRedirectPath(redirectParam);
-    // redirectパラメータがあればそのページに、なければ/projectsにリダイレクト
-    await router.push(redirectPath || '/projects');
-  } catch (err) {
-    // エラーはストアで管理されているので、ここでは何もしない
-    console.error('Login error:', err);
+    const { apiFetch } = useApi()
+    const result = await apiFetch<{
+      accessToken: string
+      refreshToken: string
+      user: any
+    }>('/api/auth/login', {
+      method: 'POST',
+      body: { email: email.value, password: password.value },
+    })
+
+    setTokens(result.accessToken, result.refreshToken)
+    setUser(result.user)
+
+    // クッキーにトークンを保存
+    const accessTokenCookie = useCookie('accessToken', {
+      maxAge: 60 * 15,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      httpOnly: false,
+    })
+    accessTokenCookie.value = result.accessToken
+
+    const redirect = route.query.redirect as string | undefined
+    await router.push(redirect || '/projects')
+  } catch (err: any) {
+    // エラーハンドリング（401エラーでリダイレクトされた場合はエラーメッセージを表示しない）
+    if (err.statusCode !== 401 && err.status !== 401) {
+      error.value = err.message || 'ログインに失敗しました'
+    }
+  } finally {
+    isLoading.value = false
   }
-};
+}
 </script>
-
-<style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-}
-
-.login-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 28px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 500;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  transition: border-color 0.3s;
-  box-sizing: border-box;
-}
-
-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.login-button {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.3s;
-}
-
-.login-button:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.login-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-</style>
-

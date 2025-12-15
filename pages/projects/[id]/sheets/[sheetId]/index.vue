@@ -137,20 +137,8 @@ const isSavingVersion = ref(false);
 const isRestoringVersion = ref(false);
 const isLoadingVersions = ref(false);
 
-const { data: sheetData, error: fetchError, refresh: refreshSheet } = await useFetch(
-  `/api/projects/${projectId}/sheets/${sheetId}`,
-  {
-    onResponseError({ response }) {
-      error.value = response.statusText || 'シートの取得に失敗しました';
-      isLoading.value = false;
-    },
-    onResponse({ response }) {
-      if (response._data) {
-        sheet.value = response._data;
-      }
-      isLoading.value = false;
-    },
-  }
+const { data: sheetData, error: fetchError, isLoading: isLoadingSheetData, refresh: refreshSheet } = useApiFetch(
+  `/api/projects/${projectId}/sheets/${sheetId}`
 );
 
 watch(sheetData, (newSheet) => {
@@ -159,12 +147,22 @@ watch(sheetData, (newSheet) => {
     isLoading.value = false;
   }
 }, { immediate: true });
+watch(isLoadingSheetData, (loading) => {
+  isLoading.value = loading;
+});
+watch(fetchError, (err) => {
+  if (err) {
+    error.value = err;
+    isLoading.value = false;
+  }
+});
 
 // バージョン一覧を取得
 const loadVersions = async () => {
   isLoadingVersions.value = true;
   try {
-    const versionsData = await $fetch(`/api/projects/${projectId}/sheets/${sheetId}/versions`);
+    const { apiFetch } = useApi();
+    const versionsData = await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/versions`);
     versions.value = versionsData;
   } catch (err: any) {
     console.error('Failed to load versions:', err);
@@ -195,7 +193,8 @@ const handleVersionChange = async () => {
     // #region agent log
     fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Fetching version data',data:{versionId:selectedVersionId.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
-    const versionData = await $fetch(
+    const { apiFetch } = useApi();
+    const versionData = await apiFetch(
       `/api/projects/${projectId}/sheets/${sheetId}/versions/${selectedVersionId.value}`
     );
     // #region agent log
@@ -247,13 +246,14 @@ const handleSaveVersion = async () => {
 
   isSavingVersion.value = true;
   try {
-    await $fetch(`/api/projects/${projectId}/sheets/${sheetId}/versions`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/versions`, {
       method: 'POST',
     });
     await loadVersions();
     alert('バージョンを保存しました');
   } catch (err: any) {
-    alert(err.data?.message || 'バージョンの保存に失敗しました');
+    alert(err.message || 'バージョンの保存に失敗しました');
   } finally {
     isSavingVersion.value = false;
   }
@@ -271,7 +271,8 @@ const handleRestoreVersion = async () => {
 
   isRestoringVersion.value = true;
   try {
-    await $fetch(
+    const { apiFetch } = useApi();
+    await apiFetch(
       `/api/projects/${projectId}/sheets/${sheetId}/versions/${selectedVersion.value.id}/restore`,
       {
         method: 'POST',
@@ -284,7 +285,7 @@ const handleRestoreVersion = async () => {
     selectedVersion.value = null;
     alert('バージョンを復元しました');
   } catch (err: any) {
-    alert(err.data?.message || 'バージョンの復元に失敗しました');
+    alert(err.message || 'バージョンの復元に失敗しました');
   } finally {
     isRestoringVersion.value = false;
   }
@@ -301,12 +302,13 @@ const handleDelete = async () => {
   }
 
   try {
-    await $fetch(`/api/projects/${projectId}/sheets/${sheetId}`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}`, {
       method: 'DELETE',
     });
     router.push(`/projects/${projectId}`);
   } catch (err: any) {
-    alert(err.data?.message || '削除に失敗しました');
+    alert(err.message || '削除に失敗しました');
   }
 };
 </script>

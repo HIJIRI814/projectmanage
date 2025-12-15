@@ -283,7 +283,8 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    const created = await $fetch(`/api/projects/${projectId}/sheets`, {
+    const { apiFetch } = useApi();
+    const created = await apiFetch(`/api/projects/${projectId}/sheets`, {
       method: 'POST',
       body: {
         name: form.value.name,
@@ -294,14 +295,14 @@ const handleSubmit = async () => {
     if (imageFile.value) {
       const formData = new FormData();
       formData.append('file', imageFile.value);
-      await $fetch(`/api/projects/${projectId}/sheets/${created.id}/image`, {
+      await apiFetch(`/api/projects/${projectId}/sheets/${created.id}/image`, {
         method: 'POST',
         body: formData,
       });
     }
     router.push(`/projects/${projectId}/sheets/${created.id}`);
   } catch (err: any) {
-    error.value = err.data?.message || '作成に失敗しました';
+    error.value = err.message || '作成に失敗しました';
   } finally {
     isLoading.value = false;
   }

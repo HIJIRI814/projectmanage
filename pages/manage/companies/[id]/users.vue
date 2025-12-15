@@ -178,18 +178,7 @@ const isLoadingCompany = ref(true);
 const companyError = ref<string | null>(null);
 
 // 会社情報を取得
-const { data: company } = await useFetch(`/api/companies/${companyId}`, {
-  onResponseError({ response }) {
-    companyError.value = response.statusText || '会社の取得に失敗しました';
-    isLoadingCompany.value = false;
-  },
-  onResponse({ response }) {
-    if (response._data) {
-      companyName.value = response._data.name;
-    }
-    isLoadingCompany.value = false;
-  },
-});
+const { data: company, isLoading: isLoadingCompanyData, error: companyErrorData } = useApiFetch(`/api/companies/${companyId}`);
 
 watch(company, (newCompany) => {
   if (newCompany) {
@@ -197,14 +186,23 @@ watch(company, (newCompany) => {
     isLoadingCompany.value = false;
   }
 }, { immediate: true });
+watch(isLoadingCompanyData, (loading) => {
+  isLoadingCompany.value = loading;
+});
+watch(companyErrorData, (err) => {
+  if (err) {
+    companyError.value = err;
+    isLoadingCompany.value = false;
+  }
+});
 
 // 会社のユーザー一覧
-const { data: users, error: usersError, isLoading: isLoadingUsers, refresh: refreshUsers } = useFetch(
+const { data: users, error: usersError, isLoading: isLoadingUsers, refresh: refreshUsers } = useApiFetch(
   `/api/companies/${companyId}/users`
 );
 
 // 全ユーザー一覧（追加用）
-const { data: allUsers } = await useFetch('/api/manage/users');
+const { data: allUsers } = useApiFetch('/api/manage/users');
 
 const availableUsers = computed(() => {
   if (!allUsers.value) return [];
@@ -229,7 +227,7 @@ const isUpdating = ref(false);
 const isRemoving = ref(false);
 
 // 招待一覧
-const { data: invitations, error: invitationsError, isLoading: isLoadingInvitations, refresh: refreshInvitations } = useFetch(
+const { data: invitations, error: invitationsError, isLoading: isLoadingInvitations, refresh: refreshInvitations } = useApiFetch(
   `/api/companies/${companyId}/invitations`
 );
 
@@ -246,7 +244,8 @@ const handleAddUser = async () => {
 
   isLoadingAdd.value = true;
   try {
-    await $fetch(`/api/companies/${companyId}/users`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/companies/${companyId}/users`, {
       method: 'POST',
       body: {
         userId: addUserForm.value.userId,
@@ -256,7 +255,7 @@ const handleAddUser = async () => {
     addUserForm.value = { userId: '', userType: 4 };
     await refreshUsers();
   } catch (err: any) {
-    alert(err.data?.message || 'ユーザーの追加に失敗しました');
+    alert(err.message || 'ユーザーの追加に失敗しました');
   } finally {
     isLoadingAdd.value = false;
   }
@@ -265,7 +264,8 @@ const handleAddUser = async () => {
 const handleUpdateUserType = async (userId: string, userType: number) => {
   isUpdating.value = true;
   try {
-    await $fetch(`/api/companies/${companyId}/users/${userId}`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/companies/${companyId}/users/${userId}`, {
       method: 'PUT',
       body: {
         userType,
@@ -273,7 +273,7 @@ const handleUpdateUserType = async (userId: string, userType: number) => {
     });
     await refreshUsers();
   } catch (err: any) {
-    alert(err.data?.message || 'ユーザー種別の更新に失敗しました');
+    alert(err.message || 'ユーザー種別の更新に失敗しました');
     await refreshUsers();
   } finally {
     isUpdating.value = false;
@@ -287,12 +287,13 @@ const handleRemoveUser = async (userId: string) => {
 
   isRemoving.value = true;
   try {
-    await $fetch(`/api/companies/${companyId}/users/${userId}`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/companies/${companyId}/users/${userId}`, {
       method: 'DELETE',
     });
     await refreshUsers();
   } catch (err: any) {
-    alert(err.data?.message || 'ユーザーの削除に失敗しました');
+    alert(err.message || 'ユーザーの削除に失敗しました');
   } finally {
     isRemoving.value = false;
   }
@@ -307,7 +308,8 @@ const handleSendInvitation = async () => {
   isLoadingInvite.value = true;
   invitationLink.value = null;
   try {
-    const response = await $fetch(`/api/companies/${companyId}/invitations`, {
+    const { apiFetch } = useApi();
+    const response = await apiFetch<{ invitationLink: string }>(`/api/companies/${companyId}/invitations`, {
       method: 'POST',
       body: {
         email: inviteForm.value.email,
@@ -319,7 +321,7 @@ const handleSendInvitation = async () => {
     inviteForm.value = { email: '', userType: 4 };
     await refreshInvitations();
   } catch (err: any) {
-    alert(err.data?.message || '招待の送信に失敗しました');
+    alert(err.message || '招待の送信に失敗しました');
   } finally {
     isLoadingInvite.value = false;
   }

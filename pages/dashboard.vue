@@ -1,108 +1,79 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-card">
-      <h1>ダッシュボード</h1>
-      <div v-if="user" class="user-info">
-        <div class="info-item">
-          <span class="label">ID:</span>
-          <span class="value">{{ user.id }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">メールアドレス:</span>
-          <span class="value">{{ user.email }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">名前:</span>
-          <span class="value">{{ user.name }}</span>
-        </div>
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">ダッシュボード</h1>
+        <p class="text-muted-foreground mt-1">
+          ようこそ、{{ user?.name }}さん
+        </p>
       </div>
-      <button @click="handleLogout" class="logout-button">ログアウト</button>
+
+      <div v-if="user" class="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>ユーザー情報</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">ID</Label>
+              <p class="mt-1 font-mono text-sm">{{ user.id }}</p>
+            </div>
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">メールアドレス</Label>
+              <p class="mt-1">{{ user.email }}</p>
+            </div>
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">名前</Label>
+              <p class="mt-1">{{ user.name }}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>クイックアクション</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-2">
+            <Button variant="outline" class="w-full justify-start" as-child>
+              <NuxtLink to="/projects">
+                <FolderKanban class="mr-2 h-4 w-4" />
+                プロジェクト一覧
+              </NuxtLink>
+            </Button>
+            <Button
+              variant="destructive"
+              class="w-full justify-start"
+              @click="handleLogout"
+            >
+              <LogOut class="mr-2 h-4 w-4" />
+              ログアウト
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-// 認証必須ページとしてmiddlewareを適用
 definePageMeta({
   middleware: 'auth',
-});
+})
 
-const router = useRouter();
-const { user, logout } = useAuth();
+import { FolderKanban, LogOut } from 'lucide-vue-next'
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import Card from '~/components/atoms/Card.vue'
+import CardHeader from '~/components/atoms/CardHeader.vue'
+import CardTitle from '~/components/atoms/CardTitle.vue'
+import CardContent from '~/components/atoms/CardContent.vue'
+import Button from '~/components/atoms/Button.vue'
+import Label from '~/components/atoms/Label.vue'
 
-const handleLogout = () => {
-  logout();
-  router.push('/login');
-};
+const router = useRouter()
+const { user, logout } = useAuth()
+
+const handleLogout = async () => {
+  await logout()
+  await router.push('/login')
+}
 </script>
-
-<style scoped>
-.dashboard-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-}
-
-.dashboard-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  width: 100%;
-  max-width: 600px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 28px;
-}
-
-.user-info {
-  margin-bottom: 30px;
-}
-
-.info-item {
-  display: flex;
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.label {
-  font-weight: 600;
-  color: #555;
-  width: 150px;
-  flex-shrink: 0;
-}
-
-.value {
-  color: #333;
-  word-break: break-all;
-}
-
-.logout-button {
-  width: 100%;
-  padding: 12px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.3s;
-}
-
-.logout-button:hover {
-  opacity: 0.9;
-}
-</style>
-

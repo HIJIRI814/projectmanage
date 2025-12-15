@@ -1,294 +1,230 @@
 <template>
-  <div class="projects-container">
-    <div class="projects-header">
-      <h1>プロジェクト</h1>
-      <NuxtLink 
-        v-if="user && user.userCompanies && user.userCompanies.some((uc: any) => uc.userType === UserType.ADMINISTRATOR)" 
-        to="/projects/new" 
-        class="new-project-button"
-      >
-        新規登録
-      </NuxtLink>
-    </div>
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">プロジェクト</h1>
+          <p class="text-muted-foreground">
+            プロジェクト一覧を管理します
+          </p>
+        </div>
+        <Button
+          v-if="user && user.userCompanies && user.userCompanies.some((uc: any) => uc.userType === UserType.ADMINISTRATOR)"
+          as-child
+        >
+          <NuxtLink to="/projects/new" class="flex items-center">
+            <Plus class="mr-2 h-4 w-4" />
+            新規登録
+          </NuxtLink>
+        </Button>
+      </div>
 
-    <div v-if="isLoading" class="loading">読み込み中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="!projects || projects.length === 0" class="empty-message">
-      閲覧できるプロジェクトはありません
-    </div>
-    <table v-else class="projects-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>名前</th>
-          <th>説明</th>
-          <th>作成日</th>
-          <th v-if="projects && projects.some((p: any) => canEditProject(p))">操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template v-for="project in projects" :key="project.id">
-          <tr>
-            <td>{{ project.id }}</td>
-            <td>
-              <NuxtLink :to="`/projects/${project.id}`" class="project-link">
-                {{ project.name }}
-              </NuxtLink>
-            </td>
-            <td>{{ project.description || '-' }}</td>
-            <td>{{ formatDate(project.createdAt) }}</td>
-            <td v-if="canEditProject(project)">
-              <NuxtLink :to="`/projects/${project.id}/edit`" class="edit-button">
-                編集
-              </NuxtLink>
-              <button @click="handleDelete(project.id)" class="delete-button">
-                削除
-              </button>
-            </td>
-          </tr>
-          <tr v-if="projectSheets[project.id]?.length" class="sheets-row">
-            <td :colspan="projects && projects.some((p: any) => canEditProject(p)) ? 5 : 4">
-              <div class="sheets-list">
-                <div class="sheets-label">シート:</div>
+      <div v-if="isLoading" class="flex items-center justify-center py-12">
+        <div class="text-muted-foreground">読み込み中...</div>
+      </div>
+      <div v-else-if="error" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+        {{ error }}
+      </div>
+      <div v-else-if="!projects || projects.length === 0" class="rounded-lg border bg-card p-12 text-center">
+        <p class="text-muted-foreground">閲覧できるプロジェクトはありません</p>
+      </div>
+      <div v-else class="space-y-4">
+        <div class="mb-4">
+          <SearchBox
+            v-model="searchQuery"
+            placeholder="プロジェクトを検索..."
+            class="max-w-sm"
+          />
+        </div>
+        <Accordion :key="accordionKey" :default-open="defaultOpenIds">
+          <AccordionItem
+            v-for="project in filteredProjects"
+            :key="project.id"
+            :value="project.id"
+          >
+            <AccordionTrigger :value="project.id">
+              <div class="flex items-center justify-between w-full">
+                <div class="flex-1 text-left">
+                  <div class="flex items-center gap-3">
+                    <NuxtLink
+                      :to="`/projects/${project.id}`"
+                      class="font-medium text-primary hover:underline"
+                      @click.stop
+                    >
+                      {{ project.name }}
+                    </NuxtLink>
+                    <Badge variant="outline" class="text-xs">
+                      {{ projectSheets[project.id]?.length || 0 }} シート
+                    </Badge>
+                  </div>
+                  <p class="text-sm text-muted-foreground mt-1">
+                    {{ project.description || '説明なし' }}
+                  </p>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    作成日: {{ formatDate(project.createdAt) }}
+                  </p>
+                </div>
                 <div
+                  v-if="canEditProject(project)"
+                  class="flex items-center gap-2 flex-shrink-0"
+                  @click.stop
+                >
+                  <Button variant="outline" size="sm" as-child>
+                    <NuxtLink :to="`/projects/${project.id}/edit`">
+                      編集
+                    </NuxtLink>
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="handleDelete(project.id)"
+                  >
+                    削除
+                  </Button>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent :value="project.id">
+              <div v-if="projectSheets[project.id] && projectSheets[project.id].length > 0" class="flex flex-wrap gap-2 pt-2">
+                <Badge
                   v-for="sheet in projectSheets[project.id]"
                   :key="sheet.id"
-                  class="sheet-item"
+                  variant="outline"
+                  class="cursor-pointer hover:bg-accent"
                   @click="navigateTo(`/projects/${project.id}/sheets/${sheet.id}`)"
                 >
                   {{ sheet.name }}
-                </div>
+                </Badge>
               </div>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
-  </div>
+              <div v-else class="text-sm text-muted-foreground py-2">
+                シートがありません
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+    </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth',
-});
+})
 
-import { UserType } from '~/domain/user/model/UserType';
+import { UserType } from '~/domain/user/model/UserType'
+import { Plus } from 'lucide-vue-next'
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import Button from '~/components/atoms/Button.vue'
+import Badge from '~/components/atoms/Badge.vue'
+import Accordion from '~/components/atoms/Accordion.vue'
+import AccordionItem from '~/components/atoms/AccordionItem.vue'
+import AccordionTrigger from '~/components/atoms/AccordionTrigger.vue'
+import AccordionContent from '~/components/atoms/AccordionContent.vue'
+import SearchBox from '~/components/molecules/SearchBox.vue'
 
-const { user } = useAuth();
+const { user } = useAuth()
 
 // プロジェクトに所属する会社のいずれかで管理者であるかをチェックする関数
-// プライベートプロジェクト（companyIdsが空）の場合は、API側でプロジェクトメンバーかどうかをチェックするため、ここでは常にtrueを返す
 const canEditProject = (project: any) => {
-  if (!user.value || !project) return false;
-  
+  if (!user.value || !project) return false
+
   // プライベートプロジェクト（companyIdsが空または存在しない）の場合
   if (!project.companyIds || project.companyIds.length === 0) {
-    // API側でプロジェクトメンバーかどうかをチェックするため、ここではtrueを返す
-    return true;
+    return true
   }
-  
+
   // 社内公開プロジェクトの場合、プロジェクトに所属する会社のいずれかで管理者であるかをチェック
-  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false;
-  
+  if (!user.value.userCompanies || user.value.userCompanies.length === 0) return false
+
   return project.companyIds.some((companyId: string) => {
     const userCompany = user.value?.userCompanies?.find(
       (uc) => uc.companyId === companyId
-    );
-    return userCompany?.userType === UserType.ADMINISTRATOR;
-  });
-};
+    )
+    return userCompany?.userType === UserType.ADMINISTRATOR
+  })
+}
 
-const { data: projects, error, isLoading, refresh } = useFetch('/api/projects');
+// プロジェクトデータを取得
+const { data: projects, isLoading, error, refresh } = useApiFetch<any[]>('/api/projects', {
+  server: false,
+})
 
-const projectSheets = ref<Record<string, any[]>>({});
+const projectSheets = ref<Record<string, any[]>>({})
+const searchQuery = ref('')
 
 // 各プロジェクトのシート一覧を取得
-watch(projects, async (newProjects) => {
-  if (!newProjects) return;
-  
-  for (const project of newProjects) {
-    try {
-      const { data: sheets } = await useFetch(`/api/projects/${project.id}/sheets`);
-      if (sheets.value) {
-        projectSheets.value[project.id] = sheets.value;
-      }
-    } catch (err) {
-      console.error(`Failed to fetch sheets for project ${project.id}:`, err);
-      projectSheets.value[project.id] = [];
+const fetchSheets = async (projectId: string) => {
+  try {
+    const { apiFetch } = useApi()
+    const sheets = await apiFetch(`/api/projects/${projectId}/sheets`)
+    if (sheets) {
+      projectSheets.value[projectId] = Array.isArray(sheets) ? sheets : []
     }
+  } catch (err) {
+    console.error(`Failed to fetch sheets for project ${projectId}:`, err)
+    projectSheets.value[projectId] = []
   }
-}, { immediate: true });
+}
+
+watch(projects, async (newProjects) => {
+  if (!newProjects) return
+
+  for (const project of newProjects) {
+    await fetchSheets(project.id)
+  }
+}, { immediate: true })
+
+// 検索フィルタリング
+const filteredProjects = computed(() => {
+  if (!projects.value || !searchQuery.value) {
+    return projects.value || []
+  }
+
+  const query = searchQuery.value.toLowerCase()
+  return projects.value.filter((project: any) => {
+    return (
+      project.name?.toLowerCase().includes(query) ||
+      project.description?.toLowerCase().includes(query)
+    )
+  })
+})
+
+// デフォルトで開くプロジェクトIDのリスト
+const defaultOpenIds = computed(() => {
+  if (!projects.value || projects.value.length === 0) {
+    return []
+  }
+  return filteredProjects.value.map((p: any) => p.id)
+})
+
+// projectsが読み込まれたら、全てのアコーディオンを開くためのキー
+const accordionKey = ref(0)
+watch(projects, () => {
+  if (projects.value && projects.value.length > 0) {
+    accordionKey.value++
+  }
+})
 
 const formatDate = (date: string | Date) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('ja-JP');
-};
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('ja-JP')
+}
 
 const handleDelete = async (projectId: string) => {
   if (!confirm('本当に削除しますか？')) {
-    return;
+    return
   }
 
   try {
-    await $fetch(`/api/projects/${projectId}`, {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/projects/${projectId}`, {
       method: 'DELETE',
-    });
-    await refresh();
+    })
+    await refresh()
   } catch (err: any) {
-    alert(err.data?.message || '削除に失敗しました');
+    alert(err.message || '削除に失敗しました')
   }
-};
+}
+
 </script>
-
-<style scoped>
-.projects-container {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.projects-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-}
-
-.new-project-button {
-  padding: 12px 24px;
-  background-color: #667eea;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.3s;
-}
-
-.new-project-button:hover {
-  background-color: #5a67d8;
-}
-
-.loading,
-.error,
-.empty-message {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.empty-message {
-  color: #718096;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.projects-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.projects-table thead {
-  background-color: #667eea;
-  color: white;
-}
-
-.projects-table th,
-.projects-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.projects-table tbody tr:hover {
-  background-color: #f7fafc;
-}
-
-.projects-table tbody tr.sheets-row:hover {
-  background-color: #f7fafc;
-}
-
-.project-link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.project-link:hover {
-  text-decoration: underline;
-}
-
-.sheets-row {
-  background-color: #f9fafb;
-}
-
-.sheets-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 16px;
-}
-
-.sheets-label {
-  font-weight: 600;
-  color: #4a5568;
-  margin-right: 8px;
-}
-
-.sheet-item {
-  padding: 6px 12px;
-  background-color: #e6fffa;
-  border: 1px solid #81e6d9;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 14px;
-}
-
-.sheet-item:hover {
-  background-color: #b2f5ea;
-}
-
-.edit-button {
-  padding: 6px 12px;
-  background-color: #48bb78;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.edit-button:hover {
-  background-color: #38a169;
-}
-
-.delete-button {
-  padding: 6px 12px;
-  background-color: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.delete-button:hover {
-  background-color: #c53030;
-}
-</style>
-

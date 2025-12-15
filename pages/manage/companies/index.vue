@@ -1,153 +1,95 @@
 <template>
-  <div class="companies-container">
-    <div class="companies-header">
-      <h1>会社一覧</h1>
-      <NuxtLink 
-        to="/manage/companies/new" 
-        class="new-company-button"
-      >
-        新規登録
-      </NuxtLink>
-    </div>
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">会社一覧</h1>
+          <p class="text-muted-foreground mt-1">
+            所属している会社を管理します
+          </p>
+        </div>
+        <Button as-child>
+          <NuxtLink to="/manage/companies/new" class="flex items-center">
+            <Plus class="mr-2 h-4 w-4" />
+            新規登録
+          </NuxtLink>
+        </Button>
+      </div>
 
-    <div v-if="pending" class="loading">読み込み中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="!companies || companies.length === 0" class="empty-message">
-      会社が登録されていません
+      <div v-if="isLoading" class="flex items-center justify-center py-12">
+        <div class="text-muted-foreground">読み込み中...</div>
+      </div>
+      <div v-else-if="error" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+        {{ error }}
+      </div>
+      <div v-else-if="!companies || companies.length === 0" class="rounded-lg border bg-card p-12 text-center">
+        <p class="text-muted-foreground">会社が登録されていません</p>
+      </div>
+      <DataTable
+        v-else
+        :columns="columns"
+        :data="companies"
+        :searchable="true"
+        search-placeholder="会社を検索..."
+        :search-keys="['name']"
+        empty-message="会社が見つかりません"
+      >
+        <template #cell-name="{ row }">
+          <NuxtLink
+            :to="`/manage/companies/${row.id}`"
+            class="font-medium text-primary hover:underline"
+          >
+            {{ row.name }}
+          </NuxtLink>
+        </template>
+        <template #cell-userType="{ value }">
+          <Badge :variant="getUserTypeBadgeVariant(value)">
+            {{ getUserTypeLabel(value) }}
+          </Badge>
+        </template>
+        <template #cell-createdAt="{ value }">
+          {{ formatDate(value) }}
+        </template>
+      </DataTable>
     </div>
-    <table v-else class="companies-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>名前</th>
-          <th>ユーザー種別</th>
-          <th>作成日</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="company in companies" :key="company.id" class="company-row">
-          <td>{{ company.id }}</td>
-          <td>
-            <NuxtLink :to="`/manage/companies/${company.id}`" class="company-link">
-              {{ company.name }}
-            </NuxtLink>
-          </td>
-          <td>{{ getUserTypeLabel(company.userType) }}</td>
-          <td>{{ formatDate(company.createdAt) }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-const { data: companies, error, pending } = useFetch('/api/companies');
+import { Plus } from 'lucide-vue-next'
+import { UserTypeValue } from '~/domain/user/model/UserType'
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import DataTable from '~/components/organisms/DataTable.vue'
+import Button from '~/components/atoms/Button.vue'
+import Badge from '~/components/atoms/Badge.vue'
+import type { VariantProps } from 'class-variance-authority'
+
+const { data: companies, error, isLoading } = useApiFetch('/api/companies')
 
 const formatDate = (date: string | Date) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('ja-JP');
-};
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('ja-JP')
+}
 
 const getUserTypeLabel = (userType: number) => {
-  const labels: Record<number, string> = {
-    1: '管理者',
-    2: 'メンバー',
-    3: 'パートナー',
-    4: '顧客',
-  };
-  return labels[userType] || '不明';
-};
+  return UserTypeValue.fromNumber(userType).getLabel()
+}
+
+const getUserTypeBadgeVariant = (
+  userType: number
+): VariantProps<typeof Badge>['variant'] => {
+  const variants: Record<number, VariantProps<typeof Badge>['variant']> = {
+    1: 'default', // ADMINISTRATOR
+    2: 'secondary', // MEMBER
+    3: 'outline', // PARTNER
+    4: 'outline', // CUSTOMER
+  }
+  return variants[userType] || 'outline'
+}
+
+const columns = [
+  { key: 'name', label: '名前' },
+  { key: 'userType', label: 'ユーザー種別', class: 'w-[120px]' },
+  { key: 'createdAt', label: '作成日', class: 'w-[120px]' },
+]
 </script>
-
-<style scoped>
-.companies-container {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.companies-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-}
-
-.new-company-button {
-  padding: 12px 24px;
-  background-color: #667eea;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.3s;
-}
-
-.new-company-button:hover {
-  background-color: #5a67d8;
-}
-
-.loading,
-.error,
-.empty-message {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.empty-message {
-  color: #718096;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.companies-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.companies-table thead {
-  background-color: #667eea;
-  color: white;
-}
-
-.companies-table th,
-.companies-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.companies-table tbody tr.company-row {
-  cursor: pointer;
-}
-
-.companies-table tbody tr.company-row:hover {
-  background-color: #f7fafc;
-}
-
-.company-link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.company-link:hover {
-  text-decoration: underline;
-}
-</style>
-

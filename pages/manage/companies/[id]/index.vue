@@ -1,209 +1,109 @@
 <template>
-  <div class="company-dashboard-container">
-    <div v-if="isLoading" class="loading">読み込み中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="company" class="company-dashboard">
-      <div class="dashboard-header">
-        <h1>{{ company.name }}</h1>
-        <div class="header-actions">
-          <NuxtLink :to="`/manage/companies/${companyId}/edit`" class="edit-button">
-            編集
-          </NuxtLink>
-          <button @click="handleDelete" class="delete-button">
+  <DashboardLayout>
+    <div v-if="isLoading" class="flex items-center justify-center py-12">
+      <div class="text-muted-foreground">読み込み中...</div>
+    </div>
+    <div v-else-if="error" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+      {{ error }}
+    </div>
+    <div v-else-if="company" class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">{{ company.name }}</h1>
+          <p class="text-muted-foreground mt-1">
+            会社の詳細情報と管理
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <Button variant="outline" as-child>
+            <NuxtLink :to="`/manage/companies/${companyId}/edit`">
+              編集
+            </NuxtLink>
+          </Button>
+          <Button variant="destructive" @click="handleDelete">
             削除
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div class="company-info">
-        <div class="info-item">
-          <label>ID:</label>
-          <span>{{ company.id }}</span>
-        </div>
-        <div class="info-item">
-          <label>作成日:</label>
-          <span>{{ formatDate(company.createdAt) }}</span>
-        </div>
-        <div class="info-item">
-          <label>更新日:</label>
-          <span>{{ formatDate(company.updatedAt) }}</span>
-        </div>
-      </div>
+      <div class="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>会社情報</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">ID</Label>
+              <p class="mt-1 font-mono text-sm">{{ company.id }}</p>
+            </div>
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">作成日</Label>
+              <p class="mt-1">{{ formatDate(company.createdAt) }}</p>
+            </div>
+            <div>
+              <Label class="text-sm font-medium text-muted-foreground">更新日</Label>
+              <p class="mt-1">{{ formatDate(company.updatedAt) }}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-      <div class="dashboard-actions">
-        <NuxtLink :to="`/manage/companies/${companyId}/users`" class="action-card">
-          <h2>ユーザー管理</h2>
-          <p>会社のユーザーを管理します</p>
-        </NuxtLink>
+        <Card class="cursor-pointer transition-shadow hover:shadow-lg" @click="navigateTo(`/manage/companies/${companyId}/users`)">
+          <CardHeader>
+            <CardTitle>ユーザー管理</CardTitle>
+            <CardDescription>
+              会社のユーザーを管理します
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" class="w-full" as-child>
+              <NuxtLink :to="`/manage/companies/${companyId}/users`">
+                ユーザー管理へ
+              </NuxtLink>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-// 会社ごとの管理者権限チェックはAPIエンドポイント側で行われるため、
-// ここでは通常の認証ミドルウェアのみを使用
 definePageMeta({
   middleware: 'auth',
-});
+})
 
-const route = useRoute();
-const companyId = route.params.id as string;
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import Card from '~/components/atoms/Card.vue'
+import CardHeader from '~/components/atoms/CardHeader.vue'
+import CardTitle from '~/components/atoms/CardTitle.vue'
+import CardDescription from '~/components/atoms/CardDescription.vue'
+import CardContent from '~/components/atoms/CardContent.vue'
+import Button from '~/components/atoms/Button.vue'
+import Label from '~/components/atoms/Label.vue'
 
-const { data: company, error, isLoading, refresh } = useFetch(`/api/companies/${companyId}`, {
-  onResponseError({ response }) {
-    // 403エラーの場合、管理者権限がないことを示す
-    if (response.status === 403) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'この会社の管理者権限が必要です',
-      });
-    }
-  },
-});
+const route = useRoute()
+const companyId = route.params.id as string
+
+const { data: company, error, isLoading, refresh } = useApiFetch(`/api/companies/${companyId}`)
 
 const formatDate = (date: string | Date) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('ja-JP');
-};
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('ja-JP')
+}
 
 const handleDelete = async () => {
   if (!confirm('本当に削除しますか？')) {
-    return;
+    return
   }
 
   try {
-    await $fetch(`/api/companies/${companyId}`, {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/companies/${companyId}`, {
       method: 'DELETE',
-    });
-    await navigateTo('/manage/companies');
+    })
+    await navigateTo('/manage/companies')
   } catch (err: any) {
-    alert(err.data?.message || '削除に失敗しました');
+    alert(err.message || '削除に失敗しました')
   }
-};
+}
 </script>
-
-<style scoped>
-.company-dashboard-container {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.edit-button {
-  padding: 10px 20px;
-  background-color: #48bb78;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.3s;
-}
-
-.edit-button:hover {
-  background-color: #38a169;
-}
-
-.delete-button {
-  padding: 10px 20px;
-  background-color: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.delete-button:hover {
-  background-color: #c53030;
-}
-
-.company-info {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.info-item {
-  display: flex;
-  margin-bottom: 16px;
-}
-
-.info-item:last-child {
-  margin-bottom: 0;
-}
-
-.info-item label {
-  font-weight: 600;
-  color: #4a5568;
-  min-width: 100px;
-}
-
-.info-item span {
-  color: #2d3748;
-}
-
-.dashboard-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.action-card {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  text-decoration: none;
-  color: inherit;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.action-card h2 {
-  font-size: 20px;
-  color: #667eea;
-  margin-bottom: 8px;
-}
-
-.action-card p {
-  color: #718096;
-  font-size: 14px;
-}
-</style>
-

@@ -283,26 +283,8 @@ const handleDrop = (event: DragEvent) => {
   validateAndSetImageFile(file, true);
 };
 
-const { data: sheet } = await useFetch(
-  `/api/projects/${projectId}/sheets/${sheetId}`,
-  {
-    onResponseError({ response }) {
-      sheetError.value = response.statusText || 'シートの取得に失敗しました';
-      isLoadingSheet.value = false;
-    },
-    onResponse({ response }) {
-      if (response._data) {
-        const sheetData = response._data;
-        form.value = {
-          name: sheetData.name,
-          description: sheetData.description || '',
-          content: sheetData.content || '',
-        };
-        imagePreviewUrl.value = sheetData.imageUrl || null;
-      }
-      isLoadingSheet.value = false;
-    },
-  }
+const { data: sheet, isLoading: isLoadingSheetData, error: sheetErrorData } = useApiFetch(
+  `/api/projects/${projectId}/sheets/${sheetId}`
 );
 
 watch(sheet, (newSheet) => {
@@ -316,13 +298,23 @@ watch(sheet, (newSheet) => {
     isLoadingSheet.value = false;
   }
 }, { immediate: true });
+watch(isLoadingSheetData, (loading) => {
+  isLoadingSheet.value = loading;
+});
+watch(sheetErrorData, (err) => {
+  if (err) {
+    sheetError.value = err;
+    isLoadingSheet.value = false;
+  }
+});
 
 const handleSubmit = async () => {
   isLoading.value = true;
   error.value = null;
 
   try {
-    await $fetch(`/api/projects/${projectId}/sheets/${sheetId}`, {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}`, {
       method: 'PUT',
       body: {
         name: form.value.name,
@@ -333,7 +325,7 @@ const handleSubmit = async () => {
     if (imageFile.value) {
       const formData = new FormData();
       formData.append('file', imageFile.value);
-      await $fetch(`/api/projects/${projectId}/sheets/${sheetId}/image`, {
+      await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/image`, {
         method: 'POST',
         body: formData,
       });

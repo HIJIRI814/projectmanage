@@ -1,202 +1,116 @@
 <template>
-  <div class="company-form-container">
-    <h1>会社編集</h1>
-    <div v-if="isLoadingCompany" class="loading">読み込み中...</div>
-    <div v-else-if="companyError" class="error">{{ companyError }}</div>
-    <form v-else @submit.prevent="handleSubmit" class="company-form">
-      <div class="form-group">
-        <label for="name">名前</label>
-        <input
-          type="text"
-          id="name"
-          v-model="form.name"
-          required
-          :disabled="isLoading"
-        />
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">会社編集</h1>
+        <p class="text-muted-foreground mt-1">
+          会社情報を編集します
+        </p>
       </div>
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div class="form-actions">
-        <button type="submit" :disabled="isLoading" class="submit-button">
-          {{ isLoading ? '更新中...' : '更新' }}
-        </button>
-        <NuxtLink to="/manage/companies" class="cancel-button">キャンセル</NuxtLink>
+
+      <div v-if="isLoadingCompany" class="flex items-center justify-center py-12">
+        <div class="text-muted-foreground">読み込み中...</div>
       </div>
-    </form>
-  </div>
+      <div v-else-if="companyError" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+        {{ companyError }}
+      </div>
+      <Card v-else>
+        <CardContent class="pt-6">
+          <form @submit.prevent="handleSubmit" class="space-y-6">
+            <FormField id="name" label="名前" :error="error" required>
+              <Input
+                id="name"
+                v-model="form.name"
+                type="text"
+                required
+                :disabled="isLoading"
+                :error="!!error"
+                placeholder="会社名を入力"
+              />
+            </FormField>
+
+            <div v-if="error" class="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              {{ error }}
+            </div>
+
+            <div class="flex gap-4">
+              <Button type="submit" :disabled="isLoading" class="flex-1">
+                <span v-if="isLoading">更新中...</span>
+                <span v-else>更新</span>
+              </Button>
+              <Button variant="outline" as-child>
+                <NuxtLink to="/manage/companies">キャンセル</NuxtLink>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
-  // 会社ごとの管理者権限チェックはAPIエンドポイント側で行われるため、
-  // ここでは通常の認証ミドルウェアのみを使用
   middleware: 'auth',
-});
+})
 
-const route = useRoute();
-const router = useRouter();
-const companyId = route.params.id as string;
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import Card from '~/components/atoms/Card.vue'
+import CardContent from '~/components/atoms/CardContent.vue'
+import FormField from '~/components/molecules/FormField.vue'
+import Input from '~/components/atoms/Input.vue'
+import Button from '~/components/atoms/Button.vue'
+
+const route = useRoute()
+const router = useRouter()
+const companyId = route.params.id as string
 
 const form = ref({
   name: '',
-});
+})
 
-const isLoading = ref(false);
-const isLoadingCompany = ref(true);
-const error = ref<string | null>(null);
-const companyError = ref<string | null>(null);
+const isLoading = ref(false)
+const isLoadingCompany = ref(true)
+const error = ref<string | null>(null)
+const companyError = ref<string | null>(null)
 
-const { data: company } = await useFetch(`/api/companies/${companyId}`, {
-  onResponseError({ response }) {
-    companyError.value = response.statusText || '会社の取得に失敗しました';
-    isLoadingCompany.value = false;
-  },
-  onResponse({ response }) {
-    if (response._data) {
-      const companyData = response._data;
-      form.value = {
-        name: companyData.name,
-      };
-    }
-    isLoadingCompany.value = false;
-  },
-});
+const { data: company, isLoading: isLoadingCompanyData, error: companyErrorData } = useApiFetch(`/api/companies/${companyId}`)
 
 watch(company, (newCompany) => {
   if (newCompany) {
     form.value = {
       name: newCompany.name,
-    };
-    isLoadingCompany.value = false;
+    }
+    isLoadingCompany.value = false
   }
-}, { immediate: true });
+}, { immediate: true })
+watch(isLoadingCompanyData, (loading) => {
+  isLoadingCompany.value = loading
+})
+watch(companyErrorData, (err) => {
+  if (err) {
+    companyError.value = err
+    isLoadingCompany.value = false
+  }
+})
 
 const handleSubmit = async () => {
-  isLoading.value = true;
-  error.value = null;
+  isLoading.value = true
+  error.value = null
 
   try {
-    await $fetch(`/api/companies/${companyId}`, {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/companies/${companyId}`, {
       method: 'PUT',
       body: {
         name: form.value.name,
       },
-    });
-    router.push('/manage/companies');
+    })
+    router.push('/manage/companies')
   } catch (err: any) {
-    error.value = err.data?.message || '更新に失敗しました';
+    error.value = err.message || '更新に失敗しました'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 </script>
-
-<style scoped>
-.company-form-container {
-  padding: 40px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-  margin-bottom: 30px;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.company-form {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 600;
-}
-
-input[type='text'] {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.error-message {
-  color: #e53e3e;
-  margin-bottom: 20px;
-  padding: 12px;
-  background-color: #fee;
-  border-radius: 6px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 30px;
-}
-
-.submit-button {
-  flex: 1;
-  padding: 12px;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #5a67d8;
-}
-
-.submit-button:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-}
-
-.cancel-button {
-  padding: 12px 24px;
-  background-color: #e2e8f0;
-  color: #4a5568;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-  transition: background-color 0.3s;
-}
-
-.cancel-button:hover {
-  background-color: #cbd5e0;
-}
-</style>
-

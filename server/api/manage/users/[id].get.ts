@@ -17,6 +17,17 @@ async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   return userCompanies[0].userType.toNumber();
 }
 
+async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return false;
+  }
+  // いずれかの会社でADMINISTRATORであるかをチェック
+  return userCompanies.some(
+    (uc) => uc.userType.toNumber() === UserType.ADMINISTRATOR
+  );
+}
+
 async function getCurrentUser(event: any) {
   const accessTokenCookie = getCookie(event, 'accessToken');
   if (!accessTokenCookie) {
@@ -38,8 +49,8 @@ async function getCurrentUser(event: any) {
     }
 
     // UserCompanyからuserTypeを取得して管理者かチェック
-    const userType = await getUserTypeInAnyCompany(userId);
-    if (!userType || userType !== UserType.ADMINISTRATOR) {
+    const isAdministrator = await isAdministratorInAnyCompany(userId);
+    if (!isAdministrator) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden: Administrator access required',

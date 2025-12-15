@@ -49,6 +49,7 @@ npm run db:seed
 - **メンバーユーザー**: `member@example.com`
   - 会社1: メンバー権限
 - **顧客ユーザー**: `customer@example.com`
+
   - 会社1: 顧客権限
 
 テストデータには以下のプロジェクトが含まれます:

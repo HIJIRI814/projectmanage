@@ -9,13 +9,15 @@ const userCompanyRepository = new UserCompanyRepositoryImpl();
 const listUsersUseCase = new ListUsers(userRepository, userCompanyRepository);
 const jwtService = new JwtService();
 
-async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
+async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
   if (userCompanies.length === 0) {
-    return null;
+    return false;
   }
-  // 最初の会社のuserTypeを返す（デフォルトとして）
-  return userCompanies[0].userType.toNumber();
+  // いずれかの会社でADMINISTRATORであるかをチェック
+  return userCompanies.some(
+    (uc) => uc.userType.toNumber() === UserType.ADMINISTRATOR
+  );
 }
 
 async function getCurrentUser(event: any) {
@@ -38,9 +40,9 @@ async function getCurrentUser(event: any) {
       });
     }
 
-    // UserCompanyからuserTypeを取得して管理者かチェック
-    const userType = await getUserTypeInAnyCompany(userId);
-    if (!userType || userType !== UserType.ADMINISTRATOR) {
+    // UserCompanyから管理者かチェック
+    const isAdministrator = await isAdministratorInAnyCompany(userId);
+    if (!isAdministrator) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden: Administrator access required',

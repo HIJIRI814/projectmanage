@@ -1,73 +1,85 @@
 <template>
-  <div class="users-container">
-    <div class="users-header">
-      <h1>ユーザー管理</h1>
-      <NuxtLink to="/manage/users/new" class="new-user-button">
-        新規登録
-      </NuxtLink>
-    </div>
+  <DashboardLayout>
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">ユーザー管理</h1>
+          <p class="text-muted-foreground mt-1">
+            システムのユーザーを管理します
+          </p>
+        </div>
+        <Button as-child>
+          <NuxtLink to="/manage/users/new" class="flex items-center">
+            <Plus class="mr-2 h-4 w-4" />
+            新規登録
+          </NuxtLink>
+        </Button>
+      </div>
 
-    <div v-if="isLoading" class="loading">読み込み中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <table v-else class="users-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>メールアドレス</th>
-          <th>名前</th>
-          <th>種別</th>
-          <th>作成日</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in users" :key="user.id">
-          <td>{{ user.id }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.name }}</td>
-          <td>{{ getUserTypeLabel(user.userType) }}</td>
-          <td>{{ formatDate(user.createdAt) }}</td>
-          <td>
-            <NuxtLink :to="`/manage/users/${user.id}/edit`" class="edit-button">
-              編集
-            </NuxtLink>
-            <button 
-              v-if="!isCurrentUser(user.id)" 
-              @click="handleDelete(user.id)" 
-              class="delete-button"
+      <div v-if="isLoading" class="flex items-center justify-center py-12">
+        <div class="text-muted-foreground">読み込み中...</div>
+      </div>
+      <div v-else-if="error" class="rounded-lg border border-destructive bg-destructive/15 p-4 text-destructive">
+        {{ error }}
+      </div>
+      <DataTable
+        v-else
+        :columns="columns"
+        :data="users || []"
+        :searchable="true"
+        search-placeholder="ユーザーを検索..."
+        :search-keys="['email', 'name']"
+        empty-message="ユーザーが見つかりません"
+      >
+        <template #cell-userType="{ value }">
+          <Badge :variant="getUserTypeBadgeVariant(value)">
+            {{ getUserTypeLabel(value) }}
+          </Badge>
+        </template>
+        <template #cell-createdAt="{ value }">
+          {{ formatDate(value) }}
+        </template>
+        <template #cell-actions="{ row }">
+          <div class="flex items-center gap-2">
+            <Button variant="outline" size="sm" as-child>
+              <NuxtLink :to="`/manage/users/${row.id}/edit`">
+                編集
+              </NuxtLink>
+            </Button>
+            <Button
+              v-if="!isCurrentUser(row.id)"
+              variant="destructive"
+              size="sm"
+              @click="handleDelete(row.id)"
             >
               削除
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+            </Button>
+          </div>
+        </template>
+      </DataTable>
+    </div>
+  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
   middleware: 'admin',
-});
+})
 
-const { user: currentUser } = useAuth();
+import { Plus } from 'lucide-vue-next'
+import DashboardLayout from '~/components/templates/DashboardLayout.vue'
+import DataTable from '~/components/organisms/DataTable.vue'
+import Button from '~/components/atoms/Button.vue'
+import Badge from '~/components/atoms/Badge.vue'
+import type { VariantProps } from 'class-variance-authority'
+
+const { user: currentUser } = useAuth()
 
 const isCurrentUser = (userId: string) => {
-  return currentUser.value?.id === userId;
-};
+  return currentUser.value?.id === userId
+}
 
-const { data: users, error, isLoading, refresh } = useFetch('/api/manage/users', {
-  onResponse({ response }) {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'pages/manage/users/index.vue:49',message:'API response received',data:{status:response.status,hasData:!!response._data,dataLength:Array.isArray(response._data)?response._data.length:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-  },
-  onResponseError({ response }) {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'pages/manage/users/index.vue:55',message:'API response error',data:{status:response.status,statusText:response.statusText},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-  },
-});
+const { data: users, error, isLoading, refresh } = useApiFetch('/api/manage/users')
 
 const getUserTypeLabel = (userType: number) => {
   const labels: Record<number, string> = {
@@ -75,126 +87,48 @@ const getUserTypeLabel = (userType: number) => {
     2: 'メンバー',
     3: 'パートナー',
     4: '顧客',
-  };
-  return labels[userType] || '不明';
-};
+  }
+  return labels[userType] || '不明'
+}
+
+const getUserTypeBadgeVariant = (
+  userType: number
+): VariantProps<typeof Badge>['variant'] => {
+  const variants: Record<number, VariantProps<typeof Badge>['variant']> = {
+    1: 'default', // ADMINISTRATOR
+    2: 'secondary', // MEMBER
+    3: 'outline', // PARTNER
+    4: 'outline', // CUSTOMER
+  }
+  return variants[userType] || 'outline'
+}
 
 const formatDate = (date: string | Date) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('ja-JP');
-};
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('ja-JP')
+}
 
 const handleDelete = async (userId: string) => {
   if (!confirm('本当に削除しますか？')) {
-    return;
+    return
   }
 
   try {
-    await $fetch(`/api/manage/users/${userId}`, {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/manage/users/${userId}`, {
       method: 'DELETE',
-    });
-    await refresh();
+    })
+    await refresh()
   } catch (err: any) {
-    alert(err.data?.message || '削除に失敗しました');
+    alert(err.message || '削除に失敗しました')
   }
-};
+}
+
+const columns = [
+  { key: 'name', label: '名前' },
+  { key: 'email', label: 'メールアドレス' },
+  { key: 'userType', label: '種別', class: 'w-[100px]' },
+  { key: 'createdAt', label: '作成日', class: 'w-[120px]' },
+  { key: 'actions', label: '操作', class: 'w-[150px]' },
+]
 </script>
-
-<style scoped>
-.users-container {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.users-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-h1 {
-  font-size: 28px;
-  color: #333;
-}
-
-.new-user-button {
-  padding: 12px 24px;
-  background-color: #667eea;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background-color 0.3s;
-}
-
-.new-user-button:hover {
-  background-color: #5a67d8;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e53e3e;
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.users-table thead {
-  background-color: #667eea;
-  color: white;
-}
-
-.users-table th,
-.users-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.users-table tbody tr:hover {
-  background-color: #f7fafc;
-}
-
-.edit-button {
-  padding: 6px 12px;
-  background-color: #48bb78;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.edit-button:hover {
-  background-color: #38a169;
-}
-
-.delete-button {
-  padding: 6px 12px;
-  background-color: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.delete-button:hover {
-  background-color: #c53030;
-}
-</style>
-
