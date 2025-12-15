@@ -16,6 +16,7 @@ export class GetSheetVersion {
       version.name,
       version.description,
       version.content,
+      version.imageUrl,
       version.versionName,
       version.createdAt
     );

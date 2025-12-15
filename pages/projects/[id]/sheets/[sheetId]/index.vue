@@ -28,6 +28,12 @@
           <label>説明:</label>
           <p>{{ sheet.description }}</p>
         </div>
+        <div class="info-item" v-if="displayImageUrl">
+          <label>画像:</label>
+          <div class="image-wrapper">
+            <img :src="displayImageUrl" alt="シート画像" />
+          </div>
+        </div>
         <div class="info-item">
           <label>作成日:</label>
           <p>{{ formatDate(sheet.createdAt) }}</p>
@@ -174,17 +180,35 @@ onMounted(() => {
 
 // 選択されたバージョンの内容を取得
 const handleVersionChange = async () => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'handleVersionChange called',data:{selectedVersionId:selectedVersionId.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   if (!selectedVersionId.value) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Clearing selectedVersion',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     selectedVersion.value = null;
     return;
   }
 
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Fetching version data',data:{versionId:selectedVersionId.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     const versionData = await $fetch(
       `/api/projects/${projectId}/sheets/${sheetId}/versions/${selectedVersionId.value}`
     );
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Version data received',data:{versionId:versionData.id,hasImageUrl:!!versionData.imageUrl,imageUrl:versionData.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     selectedVersion.value = versionData;
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'selectedVersion updated',data:{selectedVersionImageUrl:selectedVersion.value?.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
   } catch (err: any) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Failed to load version',data:{error:err.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.error('Failed to load version:', err);
     alert('バージョンの取得に失敗しました');
   }
@@ -196,6 +220,23 @@ const displayContent = computed(() => {
     return selectedVersion.value.content;
   }
   return sheet.value?.content;
+});
+
+// 表示する画像URLを計算（バージョン選択時はバージョンの画像URL、未選択時は現在のシートの画像URL）
+const displayImageUrl = computed(() => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:displayImageUrl',message:'Computing displayImageUrl',data:{hasSelectedVersion:!!selectedVersion.value,selectedVersionImageUrl:selectedVersion.value?.imageUrl,sheetImageUrl:sheet.value?.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  if (selectedVersion.value) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:displayImageUrl',message:'Returning selectedVersion imageUrl',data:{imageUrl:selectedVersion.value.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return selectedVersion.value.imageUrl;
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:displayImageUrl',message:'Returning sheet imageUrl',data:{imageUrl:sheet.value?.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  return sheet.value?.imageUrl;
 });
 
 // バージョン保存
@@ -362,6 +403,12 @@ h1 {
 .info-item p {
   margin: 0;
   color: #2d3748;
+}
+
+.image-wrapper img {
+  max-width: 320px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .sheet-content {

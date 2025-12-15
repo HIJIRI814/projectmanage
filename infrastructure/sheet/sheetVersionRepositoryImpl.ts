@@ -18,6 +18,7 @@ export class SheetVersionRepositoryImpl implements ISheetVersionRepository {
       versionData.name,
       versionData.description,
       versionData.content,
+      versionData.imageUrl,
       versionData.versionName,
       versionData.createdAt
     );
@@ -36,6 +37,7 @@ export class SheetVersionRepositoryImpl implements ISheetVersionRepository {
         versionData.name,
         versionData.description,
         versionData.content,
+        versionData.imageUrl,
         versionData.versionName,
         versionData.createdAt
       )
@@ -50,6 +52,7 @@ export class SheetVersionRepositoryImpl implements ISheetVersionRepository {
         name: version.name,
         description: version.description,
         content: version.content,
+        imageUrl: version.imageUrl,
         versionName: version.versionName,
         createdAt: version.createdAt,
       },
@@ -61,6 +64,7 @@ export class SheetVersionRepositoryImpl implements ISheetVersionRepository {
       versionData.name,
       versionData.description,
       versionData.content,
+      versionData.imageUrl,
       versionData.versionName,
       versionData.createdAt
     );

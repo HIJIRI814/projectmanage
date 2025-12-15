@@ -10,7 +10,8 @@ describe('SheetVersion', () => {
 
   describe('create', () => {
     it('should create a new SheetVersion', () => {
-      const version = SheetVersion.create(versionId, sheetId, name, description, content);
+      const imageUrl = 'https://example.com/image.png';
+      const version = SheetVersion.create(versionId, sheetId, name, description, content, imageUrl);
 
       expect(version).toBeInstanceOf(SheetVersion);
       expect(version.id).toBe(versionId);
@@ -18,12 +19,13 @@ describe('SheetVersion', () => {
       expect(version.name).toBe(name);
       expect(version.description).toBe(description);
       expect(version.content).toBe(content);
+      expect(version.imageUrl).toBe(imageUrl);
       expect(version.versionName).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
       expect(version.createdAt).toBeInstanceOf(Date);
     });
 
-    it('should create a SheetVersion with null description and content when not provided', () => {
-      const version = SheetVersion.create(versionId, sheetId, name, null, null);
+    it('should create a SheetVersion with null description, content, and imageUrl when not provided', () => {
+      const version = SheetVersion.create(versionId, sheetId, name, null, null, null);
 
       expect(version).toBeInstanceOf(SheetVersion);
       expect(version.id).toBe(versionId);
@@ -31,6 +33,7 @@ describe('SheetVersion', () => {
       expect(version.name).toBe(name);
       expect(version.description).toBeNull();
       expect(version.content).toBeNull();
+      expect(version.imageUrl).toBeNull();
       expect(version.versionName).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
       expect(version.createdAt).toBeInstanceOf(Date);
     });
@@ -48,6 +51,7 @@ describe('SheetVersion', () => {
     it('should reconstruct a SheetVersion from existing data', () => {
       const createdAt = new Date('2024-01-01');
       const versionName = '2024-01-01 12:00:00';
+      const imageUrl = 'https://example.com/image.png';
 
       const version = SheetVersion.reconstruct(
         versionId,
@@ -55,6 +59,7 @@ describe('SheetVersion', () => {
         name,
         description,
         content,
+        imageUrl,
         versionName,
         createdAt
       );
@@ -65,11 +70,12 @@ describe('SheetVersion', () => {
       expect(version.name).toBe(name);
       expect(version.description).toBe(description);
       expect(version.content).toBe(content);
+      expect(version.imageUrl).toBe(imageUrl);
       expect(version.versionName).toBe(versionName);
       expect(version.createdAt).toEqual(createdAt);
     });
 
-    it('should reconstruct a SheetVersion with null description and content', () => {
+    it('should reconstruct a SheetVersion with null description, content, and imageUrl', () => {
       const createdAt = new Date('2024-01-01');
       const versionName = '2024-01-01 12:00:00';
 
@@ -77,6 +83,7 @@ describe('SheetVersion', () => {
         versionId,
         sheetId,
         name,
+        null,
         null,
         null,
         versionName,
@@ -89,6 +96,7 @@ describe('SheetVersion', () => {
       expect(version.name).toBe(name);
       expect(version.description).toBeNull();
       expect(version.content).toBeNull();
+      expect(version.imageUrl).toBeNull();
       expect(version.versionName).toBe(versionName);
       expect(version.createdAt).toEqual(createdAt);
     });

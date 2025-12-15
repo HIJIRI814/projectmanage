@@ -22,6 +22,7 @@ describe('SheetVersionRepositoryImpl', () => {
   const name = 'Test Sheet';
   const description = 'Test Description';
   const content = 'Test Content';
+  const imageUrl = 'https://example.com/image.png';
   const versionName = '2024-01-01 12:00:00';
   const createdAt = new Date('2024-01-01');
 
@@ -38,6 +39,7 @@ describe('SheetVersionRepositoryImpl', () => {
         name,
         description,
         content,
+        imageUrl,
         versionName,
         createdAt,
       };
@@ -52,6 +54,7 @@ describe('SheetVersionRepositoryImpl', () => {
       expect(version?.name).toBe(name);
       expect(version?.description).toBe(description);
       expect(version?.content).toBe(content);
+      expect(version?.imageUrl).toBe(imageUrl);
       expect(version?.versionName).toBe(versionName);
       expect(prismaClient.sheetVersion.findUnique).toHaveBeenCalledWith({
         where: { id: versionId },
@@ -79,6 +82,7 @@ describe('SheetVersionRepositoryImpl', () => {
           name,
           description,
           content,
+          imageUrl,
           versionName,
           createdAt,
         },
@@ -88,6 +92,7 @@ describe('SheetVersionRepositoryImpl', () => {
           name: 'Sheet 2',
           description: 'Description 2',
           content: 'Content 2',
+          imageUrl: 'https://example.com/image2.png',
           versionName: '2024-01-02 12:00:00',
           createdAt: new Date('2024-01-02'),
         },
@@ -125,6 +130,7 @@ describe('SheetVersionRepositoryImpl', () => {
         name,
         description,
         content,
+        imageUrl,
         versionName,
         createdAt
       );
@@ -135,6 +141,7 @@ describe('SheetVersionRepositoryImpl', () => {
         name,
         description,
         content,
+        imageUrl,
         versionName,
         createdAt,
       };
@@ -152,6 +159,7 @@ describe('SheetVersionRepositoryImpl', () => {
           name,
           description,
           content,
+          imageUrl,
           versionName,
           createdAt,
         },
@@ -167,6 +175,7 @@ describe('SheetVersionRepositoryImpl', () => {
         name,
         description,
         content,
+        imageUrl,
         versionName,
         createdAt,
       });

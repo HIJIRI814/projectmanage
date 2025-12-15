@@ -1,5 +1,6 @@
 import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl';
 import { SheetVersionRepositoryImpl } from '~/infrastructure/sheet/sheetVersionRepositoryImpl';
+import { ImageBackupService } from '~/infrastructure/sheet/imageBackupService';
 import { CreateSheetVersion } from '~/application/sheet/useCases/CreateSheetVersion';
 import { JwtService } from '~/infrastructure/auth/jwtService';
 import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
@@ -8,7 +9,12 @@ import { UserType } from '~/domain/user/model/UserType';
 
 const sheetRepository = new SheetRepositoryImpl();
 const sheetVersionRepository = new SheetVersionRepositoryImpl();
-const createSheetVersionUseCase = new CreateSheetVersion(sheetRepository, sheetVersionRepository);
+const imageBackupService = new ImageBackupService();
+const createSheetVersionUseCase = new CreateSheetVersion(
+  sheetRepository,
+  sheetVersionRepository,
+  imageBackupService
+);
 const userRepository = new UserRepositoryImpl();
 const jwtService = new JwtService();
 

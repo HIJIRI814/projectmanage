@@ -15,6 +15,7 @@ export class ListSheets {
           sheet.name,
           sheet.description,
           sheet.content,
+          sheet.imageUrl,
           sheet.createdAt,
           sheet.updatedAt
         )

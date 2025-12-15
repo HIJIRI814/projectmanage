@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateSheetVersion } from './CreateSheetVersion';
 import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
 import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
+import { IImageBackupService } from '../../../domain/sheet/service/IImageBackupService';
 import { CreateSheetVersionInput } from '../dto/CreateSheetVersionInput';
 import { Sheet } from '../../../domain/sheet/model/Sheet';
 import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
@@ -15,6 +16,7 @@ describe('CreateSheetVersion', () => {
   let createSheetVersion: CreateSheetVersion;
   let mockSheetRepository: ISheetRepository;
   let mockSheetVersionRepository: ISheetVersionRepository;
+  let mockImageBackupService: IImageBackupService;
 
   const sheetId = 'test-sheet-id';
   const projectId = 'test-project-id';
@@ -37,7 +39,15 @@ describe('CreateSheetVersion', () => {
       delete: vi.fn(),
     };
 
-    createSheetVersion = new CreateSheetVersion(mockSheetRepository, mockSheetVersionRepository);
+    mockImageBackupService = {
+      backupImage: vi.fn(),
+    };
+
+    createSheetVersion = new CreateSheetVersion(
+      mockSheetRepository,
+      mockSheetVersionRepository,
+      mockImageBackupService
+    );
   });
 
   describe('execute', () => {
@@ -48,6 +58,7 @@ describe('CreateSheetVersion', () => {
         sheetName,
         sheetDescription,
         sheetContent,
+        'https://example.com/img.png',
         new Date('2024-01-01'),
         new Date('2024-01-01')
       );
@@ -59,11 +70,13 @@ describe('CreateSheetVersion', () => {
         sheetName,
         sheetDescription,
         sheetContent,
+        'https://example.com/img.png',
         '2024-01-02 12:00:00',
         createdAt
       );
 
       vi.mocked(mockSheetRepository.findById).mockResolvedValue(sheet);
+      vi.mocked(mockImageBackupService.backupImage).mockResolvedValue('https://example.com/img.png');
       vi.mocked(mockSheetVersionRepository.save).mockResolvedValue(savedVersion);
 
       const input = new CreateSheetVersionInput();
@@ -75,10 +88,12 @@ describe('CreateSheetVersion', () => {
       expect(result.name).toBe(sheetName);
       expect(result.description).toBe(sheetDescription);
       expect(result.content).toBe(sheetContent);
+      expect(result.imageUrl).toBe('https://example.com/img.png');
       expect(result.versionName).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
       expect(result.createdAt).toEqual(createdAt);
 
       expect(mockSheetRepository.findById).toHaveBeenCalledWith(sheetId);
+      expect(mockImageBackupService.backupImage).toHaveBeenCalledWith('https://example.com/img.png');
       expect(mockSheetVersionRepository.save).toHaveBeenCalled();
       const savedVersionArg = vi.mocked(mockSheetVersionRepository.save).mock.calls[0][0];
       expect(savedVersionArg).toBeInstanceOf(SheetVersion);
@@ -86,6 +101,7 @@ describe('CreateSheetVersion', () => {
       expect(savedVersionArg.name).toBe(sheetName);
       expect(savedVersionArg.description).toBe(sheetDescription);
       expect(savedVersionArg.content).toBe(sheetContent);
+      expect(savedVersionArg.imageUrl).toBe('https://example.com/img.png');
     });
 
     it('should throw error when sheet not found', async () => {

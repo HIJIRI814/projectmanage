@@ -29,6 +29,7 @@ describe('GetSheetVersion', () => {
         'Test Sheet',
         'Test Description',
         'Test Content',
+        'https://example.com/image.png',
         '2024-01-01 12:00:00',
         new Date('2024-01-01')
       );
@@ -43,6 +44,7 @@ describe('GetSheetVersion', () => {
       expect(result.name).toBe('Test Sheet');
       expect(result.description).toBe('Test Description');
       expect(result.content).toBe('Test Content');
+      expect(result.imageUrl).toBe('https://example.com/image.png');
       expect(result.versionName).toBe('2024-01-01 12:00:00');
       expect(mockSheetVersionRepository.findById).toHaveBeenCalledWith(versionId);
     });

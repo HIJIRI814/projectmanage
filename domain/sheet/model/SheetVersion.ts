@@ -5,6 +5,7 @@ export class SheetVersion {
     public readonly name: string,
     public readonly description: string | null,
     public readonly content: string | null,
+    public readonly imageUrl: string | null,
     public readonly versionName: string,
     public readonly createdAt: Date
   ) {}
@@ -14,11 +15,12 @@ export class SheetVersion {
     sheetId: string,
     name: string,
     description: string | null,
-    content: string | null
+    content: string | null,
+    imageUrl: string | null = null
   ): SheetVersion {
     const now = new Date();
     const versionName = SheetVersion.generateVersionName(now);
-    return new SheetVersion(id, sheetId, name, description, content, versionName, now);
+    return new SheetVersion(id, sheetId, name, description, content, imageUrl, versionName, now);
   }
 
   static reconstruct(
@@ -27,10 +29,11 @@ export class SheetVersion {
     name: string,
     description: string | null,
     content: string | null,
+    imageUrl: string | null,
     versionName: string,
     createdAt: Date
   ): SheetVersion {
-    return new SheetVersion(id, sheetId, name, description, content, versionName, createdAt);
+    return new SheetVersion(id, sheetId, name, description, content, imageUrl, versionName, createdAt);
   }
 
   private static generateVersionName(date: Date): string {

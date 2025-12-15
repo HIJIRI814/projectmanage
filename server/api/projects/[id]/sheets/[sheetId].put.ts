@@ -15,6 +15,7 @@ const updateSheetSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   content: z.string().optional(),
+  imageUrl: z.string().url().optional(),
 });
 
 async function getCurrentUser(event: any) {
@@ -87,7 +88,8 @@ export default defineEventHandler(async (event) => {
     const input = new UpdateSheetInput(
       validationResult.data.name,
       validationResult.data.description,
-      validationResult.data.content
+      validationResult.data.content,
+      validationResult.data.imageUrl
     );
 
     const result = await updateSheetUseCase.execute(sheetId, input);

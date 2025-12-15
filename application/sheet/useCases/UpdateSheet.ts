@@ -18,6 +18,7 @@ export class UpdateSheet {
       input.name || sheet.name,
       input.description !== undefined ? input.description : sheet.description,
       input.content !== undefined ? input.content : sheet.content,
+      input.imageUrl !== undefined ? input.imageUrl : sheet.imageUrl,
       sheet.createdAt,
       new Date()
     );
@@ -30,6 +31,7 @@ export class UpdateSheet {
       savedSheet.name,
       savedSheet.description,
       savedSheet.content,
+      savedSheet.imageUrl,
       savedSheet.createdAt,
       savedSheet.updatedAt
     );

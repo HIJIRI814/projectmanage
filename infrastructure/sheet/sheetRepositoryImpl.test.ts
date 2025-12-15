@@ -38,7 +38,8 @@ describe('SheetRepositoryImpl', () => {
         projectId,
         'Test Sheet',
         'Test Description',
-        'Test Content'
+        'Test Content',
+        'https://example.com/img.png'
       );
 
       const savedSheet = await repository.save(sheet);
@@ -49,6 +50,7 @@ describe('SheetRepositoryImpl', () => {
       expect(savedSheet.name).toBe('Test Sheet');
       expect(savedSheet.description).toBe('Test Description');
       expect(savedSheet.content).toBe('Test Content');
+      expect(savedSheet.imageUrl).toBe('https://example.com/img.png');
     });
 
     it('should update an existing sheet', async () => {
@@ -69,6 +71,7 @@ describe('SheetRepositoryImpl', () => {
         'Updated Sheet',
         'Updated Description',
         'Updated Content',
+        'https://example.com/new.png',
         sheet.createdAt,
         new Date()
       );
@@ -78,6 +81,7 @@ describe('SheetRepositoryImpl', () => {
       expect(savedSheet.name).toBe('Updated Sheet');
       expect(savedSheet.description).toBe('Updated Description');
       expect(savedSheet.content).toBe('Updated Content');
+      expect(savedSheet.imageUrl).toBe('https://example.com/new.png');
     });
   });
 
@@ -88,7 +92,8 @@ describe('SheetRepositoryImpl', () => {
         projectId,
         'Test Sheet',
         'Test Description',
-        'Test Content'
+        'Test Content',
+        'https://example.com/img.png'
       );
       await repository.save(sheet);
 
@@ -113,12 +118,14 @@ describe('SheetRepositoryImpl', () => {
         projectId,
         'Sheet 1',
         null,
+        null,
         null
       );
       const sheet2 = Sheet.create(
         'test-sheet-id-2',
         projectId,
         'Sheet 2',
+        null,
         null,
         null
       );
@@ -146,6 +153,7 @@ describe('SheetRepositoryImpl', () => {
         'test-sheet-id',
         projectId,
         'Test Sheet',
+        null,
         null,
         null
       );

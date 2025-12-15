@@ -28,6 +28,7 @@ describe('ListSheetVersions', () => {
         'Sheet Name 1',
         'Description 1',
         'Content 1',
+        'https://example.com/image1.png',
         '2024-01-01 12:00:00',
         new Date('2024-01-01')
       );
@@ -38,6 +39,7 @@ describe('ListSheetVersions', () => {
         'Sheet Name 2',
         'Description 2',
         'Content 2',
+        'https://example.com/image2.png',
         '2024-01-02 12:00:00',
         new Date('2024-01-02')
       );

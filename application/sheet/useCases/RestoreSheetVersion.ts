@@ -31,6 +31,7 @@ export class RestoreSheetVersion {
       version.name,
       version.description,
       version.content,
+      version.imageUrl,
       sheet.createdAt,
       new Date()
     );
@@ -43,6 +44,7 @@ export class RestoreSheetVersion {
       savedSheet.name,
       savedSheet.description,
       savedSheet.content,
+      savedSheet.imageUrl,
       savedSheet.createdAt,
       savedSheet.updatedAt
     );

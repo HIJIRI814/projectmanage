@@ -15,6 +15,7 @@ export class ListSheetVersions {
           version.name,
           version.description,
           version.content,
+          version.imageUrl,
           version.versionName,
           version.createdAt
         )

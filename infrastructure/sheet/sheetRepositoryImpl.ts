@@ -18,6 +18,7 @@ export class SheetRepositoryImpl implements ISheetRepository {
       sheetData.name,
       sheetData.description,
       sheetData.content,
+      sheetData.imageUrl,
       sheetData.createdAt,
       sheetData.updatedAt
     );
@@ -36,6 +37,7 @@ export class SheetRepositoryImpl implements ISheetRepository {
         sheetData.name,
         sheetData.description,
         sheetData.content,
+        sheetData.imageUrl,
         sheetData.createdAt,
         sheetData.updatedAt
       )
@@ -49,6 +51,7 @@ export class SheetRepositoryImpl implements ISheetRepository {
         name: sheet.name,
         description: sheet.description,
         content: sheet.content,
+        imageUrl: sheet.imageUrl,
         updatedAt: new Date(),
       },
       create: {
@@ -57,6 +60,7 @@ export class SheetRepositoryImpl implements ISheetRepository {
         name: sheet.name,
         description: sheet.description,
         content: sheet.content,
+        imageUrl: sheet.imageUrl,
         createdAt: sheet.createdAt,
         updatedAt: sheet.updatedAt,
       },
@@ -68,6 +72,7 @@ export class SheetRepositoryImpl implements ISheetRepository {
       sheetData.name,
       sheetData.description,
       sheetData.content,
+      sheetData.imageUrl,
       sheetData.createdAt,
       sheetData.updatedAt
     );

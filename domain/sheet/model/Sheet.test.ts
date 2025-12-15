@@ -9,14 +9,16 @@ describe('Sheet', () => {
       const name = 'Sheet Name';
       const description = 'Sheet Description';
       const content = 'Sheet Content';
+      const imageUrl = 'https://example.com/image.png';
 
-      const sheet = Sheet.create(id, projectId, name, description, content);
+      const sheet = Sheet.create(id, projectId, name, description, content, imageUrl);
 
       expect(sheet.id).toBe(id);
       expect(sheet.projectId).toBe(projectId);
       expect(sheet.name).toBe(name);
       expect(sheet.description).toBe(description);
       expect(sheet.content).toBe(content);
+      expect(sheet.imageUrl).toBe(imageUrl);
       expect(sheet.createdAt).toBeInstanceOf(Date);
       expect(sheet.updatedAt).toBeInstanceOf(Date);
     });
@@ -33,6 +35,7 @@ describe('Sheet', () => {
       expect(sheet.name).toBe(name);
       expect(sheet.description).toBeNull();
       expect(sheet.content).toBeNull();
+      expect(sheet.imageUrl).toBeNull();
     });
   });
 
@@ -43,6 +46,7 @@ describe('Sheet', () => {
       const name = 'Sheet Name';
       const description = 'Sheet Description';
       const content = 'Sheet Content';
+      const imageUrl = 'https://example.com/image.png';
       const createdAt = new Date('2024-01-01');
       const updatedAt = new Date('2024-01-02');
 
@@ -52,6 +56,7 @@ describe('Sheet', () => {
         name,
         description,
         content,
+        imageUrl,
         createdAt,
         updatedAt
       );
@@ -61,6 +66,7 @@ describe('Sheet', () => {
       expect(sheet.name).toBe(name);
       expect(sheet.description).toBe(description);
       expect(sheet.content).toBe(content);
+      expect(sheet.imageUrl).toBe(imageUrl);
       expect(sheet.createdAt).toEqual(createdAt);
       expect(sheet.updatedAt).toEqual(updatedAt);
     });
@@ -78,6 +84,7 @@ describe('Sheet', () => {
         name,
         null,
         null,
+        null,
         createdAt,
         updatedAt
       );
@@ -87,6 +94,7 @@ describe('Sheet', () => {
       expect(sheet.name).toBe(name);
       expect(sheet.description).toBeNull();
       expect(sheet.content).toBeNull();
+      expect(sheet.imageUrl).toBeNull();
     });
   });
 });

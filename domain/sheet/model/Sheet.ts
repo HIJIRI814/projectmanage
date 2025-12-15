@@ -5,6 +5,7 @@ export class Sheet {
     public readonly name: string,
     public readonly description: string | null,
     public readonly content: string | null,
+    public readonly imageUrl: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}
@@ -14,10 +15,11 @@ export class Sheet {
     projectId: string,
     name: string,
     description: string | null = null,
-    content: string | null = null
+    content: string | null = null,
+    imageUrl: string | null = null
   ): Sheet {
     const now = new Date();
-    return new Sheet(id, projectId, name, description, content, now, now);
+    return new Sheet(id, projectId, name, description, content, imageUrl, now, now);
   }
 
   static reconstruct(
@@ -26,10 +28,11 @@ export class Sheet {
     name: string,
     description: string | null,
     content: string | null,
+    imageUrl: string | null,
     createdAt: Date,
     updatedAt: Date
   ): Sheet {
-    return new Sheet(id, projectId, name, description, content, createdAt, updatedAt);
+    return new Sheet(id, projectId, name, description, content, imageUrl, createdAt, updatedAt);
   }
 }
 

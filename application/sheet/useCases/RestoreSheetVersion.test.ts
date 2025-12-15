@@ -41,6 +41,7 @@ describe('RestoreSheetVersion', () => {
         'Current Sheet Name',
         'Current Description',
         'Current Content',
+        'https://example.com/current.png',
         new Date('2024-01-01'),
         new Date('2024-01-01')
       );
@@ -51,6 +52,7 @@ describe('RestoreSheetVersion', () => {
         'Version Sheet Name',
         'Version Description',
         'Version Content',
+        'https://example.com/version.png',
         '2024-01-01 12:00:00',
         new Date('2024-01-01')
       );
@@ -61,6 +63,7 @@ describe('RestoreSheetVersion', () => {
         'Version Sheet Name',
         'Version Description',
         'Version Content',
+        'https://example.com/version.png',
         new Date('2024-01-01'),
         new Date('2024-01-02')
       );
@@ -78,6 +81,7 @@ describe('RestoreSheetVersion', () => {
       expect(result.name).toBe('Version Sheet Name');
       expect(result.description).toBe('Version Description');
       expect(result.content).toBe('Version Content');
+      expect(result.imageUrl).toBe('https://example.com/version.png');
 
       expect(mockSheetVersionRepository.findById).toHaveBeenCalledWith(versionId);
       expect(mockSheetRepository.findById).toHaveBeenCalledWith(sheetId);
@@ -101,6 +105,7 @@ describe('RestoreSheetVersion', () => {
         'Version Sheet Name',
         'Version Description',
         'Version Content',
+        'https://example.com/version.png',
         '2024-01-01 12:00:00',
         new Date('2024-01-01')
       );
@@ -120,6 +125,7 @@ describe('RestoreSheetVersion', () => {
         'Current Sheet Name',
         'Current Description',
         'Current Content',
+        'https://example.com/current.png',
         new Date('2024-01-01'),
         new Date('2024-01-01')
       );
@@ -130,6 +136,7 @@ describe('RestoreSheetVersion', () => {
         'Version Sheet Name',
         'Version Description',
         'Version Content',
+        'https://example.com/version.png',
         '2024-01-01 12:00:00',
         new Date('2024-01-01')
       );

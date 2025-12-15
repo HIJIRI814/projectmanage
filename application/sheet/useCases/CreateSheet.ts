@@ -13,7 +13,8 @@ export class CreateSheet {
       projectId,
       input.name,
       input.description || null,
-      input.content || null
+      input.content || null,
+      input.imageUrl || null
     );
 
     const savedSheet = await this.sheetRepository.save(sheet);
@@ -24,6 +25,7 @@ export class CreateSheet {
       savedSheet.name,
       savedSheet.description,
       savedSheet.content,
+      savedSheet.imageUrl,
       savedSheet.createdAt,
       savedSheet.updatedAt
     );
