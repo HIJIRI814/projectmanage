@@ -14,6 +14,7 @@
         :to="item.to"
         :is-active="isActive(item.to)"
         :icon="item.icon"
+        :hide-label-on-mobile="false"
       >
         {{ item.label }}
       </NavigationItem>
