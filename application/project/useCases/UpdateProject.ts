@@ -19,6 +19,7 @@ export class UpdateProject {
       input.description !== undefined ? input.description : project.description,
       input.visibility ? input.visibility : project.visibility.toString(),
       input.companyIds !== undefined ? input.companyIds : project.companyIds,
+      input.clientCompanyIds !== undefined ? input.clientCompanyIds : project.clientCompanyIds,
       project.createdAt,
       new Date()
     );
@@ -31,6 +32,7 @@ export class UpdateProject {
       savedProject.description,
       savedProject.visibility.toString(),
       savedProject.companyIds,
+      savedProject.clientCompanyIds,
       savedProject.createdAt,
       savedProject.updatedAt
     );

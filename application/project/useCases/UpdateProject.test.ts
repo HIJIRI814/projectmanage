@@ -38,6 +38,7 @@ describe('UpdateProject', () => {
         originalDescription,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -47,6 +48,7 @@ describe('UpdateProject', () => {
         updatedName,
         updatedDescription,
         ProjectVisibility.PRIVATE,
+        [],
         [],
         createdAt,
         updatedUpdatedAt
@@ -80,6 +82,7 @@ describe('UpdateProject', () => {
         originalDescription,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -89,6 +92,7 @@ describe('UpdateProject', () => {
         updatedName,
         originalDescription,
         ProjectVisibility.PRIVATE,
+        [],
         [],
         createdAt,
         updatedUpdatedAt
@@ -115,6 +119,7 @@ describe('UpdateProject', () => {
         originalDescription,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -124,6 +129,7 @@ describe('UpdateProject', () => {
         originalName,
         updatedDescription,
         ProjectVisibility.PRIVATE,
+        [],
         [],
         createdAt,
         updatedUpdatedAt
@@ -163,6 +169,7 @@ describe('UpdateProject', () => {
         originalDescription,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt,
         originalUpdatedAt
       );
@@ -172,6 +179,7 @@ describe('UpdateProject', () => {
         originalName,
         null,
         ProjectVisibility.PRIVATE,
+        [],
         [],
         createdAt,
         updatedUpdatedAt

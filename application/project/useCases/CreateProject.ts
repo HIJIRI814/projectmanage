@@ -14,7 +14,8 @@ export class CreateProject {
       input.name,
       input.description || null,
       input.visibility || ProjectVisibility.PRIVATE,
-      input.companyIds || []
+      input.companyIds || [],
+      input.clientCompanyIds || []
     );
 
     const savedProject = await this.projectRepository.save(project);
@@ -25,6 +26,7 @@ export class CreateProject {
       savedProject.description,
       savedProject.visibility.toString(),
       savedProject.companyIds,
+      savedProject.clientCompanyIds,
       savedProject.createdAt,
       savedProject.updatedAt
     );

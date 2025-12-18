@@ -1,9 +1,9 @@
-import { CompanyPartnershipRepositoryImpl } from '../../../../../../infrastructure/company/companyPartnershipRepositoryImpl';
-import { CompanyRepositoryImpl } from '../../../../../../infrastructure/company/companyRepositoryImpl';
-import { ListPartnerships } from '../../../../../../application/company/useCases/ListPartnerships';
-import { JwtService } from '../../../../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../../../../infrastructure/auth/userRepositoryImpl';
-import { isAdministratorInCompany } from '../../../../../utils/auth';
+import { CompanyPartnershipRepositoryImpl } from '../../../../../infrastructure/company/companyPartnershipRepositoryImpl';
+import { CompanyRepositoryImpl } from '../../../../../infrastructure/company/companyRepositoryImpl';
+import { ListPartnerships } from '../../../../../application/company/useCases/ListPartnerships';
+import { JwtService } from '../../../../../infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
+import { isAdministratorInCompany } from '../../../../utils/auth';
 
 const partnershipRepository = new CompanyPartnershipRepositoryImpl();
 const companyRepository = new CompanyRepositoryImpl();

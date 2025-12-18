@@ -63,6 +63,77 @@
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>連携企業</CardTitle>
+          <CardDescription>
+            連携企業の一覧と追加
+          </CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <div v-if="isLoadingPartnerships" class="text-sm text-muted-foreground">
+            読み込み中...
+          </div>
+          <div v-else-if="partnershipsError" class="text-sm text-destructive">
+            {{ partnershipsError }}
+          </div>
+          <div v-else-if="partnerships && partnerships.length > 0" class="space-y-2">
+            <div
+              v-for="partnership in partnerships"
+              :key="partnership.id"
+              class="flex items-center justify-between rounded-md border p-3"
+            >
+              <div>
+                <p class="font-medium">{{ partnership.partnerCompanyName }}</p>
+                <p class="text-sm text-muted-foreground">
+                  連携日: {{ formatDate(partnership.createdAt) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-sm text-muted-foreground">
+            連携企業が登録されていません
+          </div>
+
+          <div class="border-t pt-4">
+            <FormField id="partnerCompanyId" label="連携企業を追加">
+              <div v-if="isLoadingAvailableCompanies" class="text-sm text-muted-foreground">
+                読み込み中...
+              </div>
+              <div v-else-if="availableCompaniesError" class="text-sm text-destructive">
+                {{ availableCompaniesError }}
+              </div>
+              <div v-else class="space-y-2">
+                <Select
+                  v-model="selectedPartnerCompanyId"
+                  :disabled="isAddingPartnership"
+                >
+                  <option value="">連携企業を選択してください</option>
+                  <option
+                    v-for="company in availableCompanies"
+                    :key="company.id"
+                    :value="company.id"
+                  >
+                    {{ company.name }}
+                  </option>
+                </Select>
+                <Button
+                  @click="handleAddPartnership"
+                  :disabled="!selectedPartnerCompanyId || isAddingPartnership"
+                  class="w-full"
+                >
+                  <span v-if="isAddingPartnership">追加中...</span>
+                  <span v-else>連携企業を追加</span>
+                </Button>
+              </div>
+            </FormField>
+            <div v-if="addPartnershipError" class="mt-2 text-sm text-destructive">
+              {{ addPartnershipError }}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   </DashboardLayout>
 </template>
@@ -80,6 +151,9 @@ import CardDescription from '~/components/atoms/CardDescription.vue'
 import CardContent from '~/components/atoms/CardContent.vue'
 import Button from '~/components/atoms/Button.vue'
 import Label from '~/components/atoms/Label.vue'
+import FormField from '~/components/molecules/FormField.vue'
+import Select from '~/components/atoms/Select.vue'
+import { UserType } from '~/domain/user/model/UserType'
 
 const route = useRoute()
 const companyId = route.params.id as string
@@ -104,6 +178,85 @@ const handleDelete = async () => {
     await navigateTo('/manage/companies')
   } catch (err: any) {
     alert(err.message || '削除に失敗しました')
+  }
+}
+
+// 連携企業一覧
+const {
+  data: partnerships,
+  error: partnershipsError,
+  isLoading: isLoadingPartnerships,
+  refresh: refreshPartnerships,
+} = useApiFetch(`/api/companies/${companyId}/partnerships`)
+
+// 追加可能な会社一覧（管理者となっている会社のみ、現在の会社と既に連携している会社を除外）
+const selectedPartnerCompanyId = ref('')
+const isAddingPartnership = ref(false)
+const addPartnershipError = ref<string | null>(null)
+const isLoadingAvailableCompanies = ref(true)
+const availableCompaniesError = ref<string | null>(null)
+const availableCompanies = ref<any[]>([])
+
+const { data: companiesData, error: companiesFetchError, isLoading: isLoadingCompaniesData } = useApiFetch('/api/companies')
+watch(companiesData, (newCompanies) => {
+  if (newCompanies && partnerships.value) {
+    // 管理者となっている会社のみをフィルタリング
+    const adminCompanies = newCompanies.filter(
+      (company: any) => company.userType === UserType.ADMINISTRATOR && company.id !== companyId
+    )
+    
+    // 既に連携している会社を除外
+    const partnerCompanyIds = partnerships.value.map((p: any) => p.partnerCompanyId)
+    availableCompanies.value = adminCompanies.filter(
+      (company: any) => !partnerCompanyIds.includes(company.id)
+    )
+    isLoadingAvailableCompanies.value = false
+  }
+}, { immediate: true })
+watch(partnerships, (newPartnerships) => {
+  if (newPartnerships && companiesData.value) {
+    const adminCompanies = companiesData.value.filter(
+      (company: any) => company.userType === UserType.ADMINISTRATOR && company.id !== companyId
+    )
+    const partnerCompanyIds = newPartnerships.map((p: any) => p.partnerCompanyId)
+    availableCompanies.value = adminCompanies.filter(
+      (company: any) => !partnerCompanyIds.includes(company.id)
+    )
+  }
+})
+watch(companiesFetchError, (err) => {
+  if (err) {
+    availableCompaniesError.value = err || '会社一覧の取得に失敗しました'
+    isLoadingAvailableCompanies.value = false
+  }
+})
+watch(isLoadingCompaniesData, (loading) => {
+  isLoadingAvailableCompanies.value = loading
+})
+
+const handleAddPartnership = async () => {
+  if (!selectedPartnerCompanyId.value) {
+    return
+  }
+
+  isAddingPartnership.value = true
+  addPartnershipError.value = null
+
+  try {
+    const { apiFetch } = useApi()
+    await apiFetch(`/api/companies/${companyId}/partnerships`, {
+      method: 'POST',
+      body: {
+        partnerCompanyId: selectedPartnerCompanyId.value,
+      },
+    })
+    
+    selectedPartnerCompanyId.value = ''
+    await refreshPartnerships()
+  } catch (err: any) {
+    addPartnershipError.value = err.message || '連携企業の追加に失敗しました'
+  } finally {
+    isAddingPartnership.value = false
   }
 }
 </script>

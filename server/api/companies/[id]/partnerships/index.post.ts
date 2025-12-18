@@ -1,10 +1,10 @@
-import { CompanyPartnershipRepositoryImpl } from '../../../../../../infrastructure/company/companyPartnershipRepositoryImpl';
-import { CompanyRepositoryImpl } from '../../../../../../infrastructure/company/companyRepositoryImpl';
-import { CreatePartnership } from '../../../../../../application/company/useCases/CreatePartnership';
-import { CreatePartnershipInput } from '../../../../../../application/company/dto/CreatePartnershipInput';
-import { JwtService } from '../../../../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../../../../infrastructure/auth/userRepositoryImpl';
-import { isAdministratorInCompany } from '../../../../../utils/auth';
+import { CompanyPartnershipRepositoryImpl } from '../../../../../infrastructure/company/companyPartnershipRepositoryImpl';
+import { CompanyRepositoryImpl } from '../../../../../infrastructure/company/companyRepositoryImpl';
+import { CreatePartnership } from '../../../../../application/company/useCases/CreatePartnership';
+import { CreatePartnershipInput } from '../../../../../application/company/dto/CreatePartnershipInput';
+import { JwtService } from '../../../../../infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
+import { isAdministratorInCompany } from '../../../../utils/auth';
 import { z } from 'zod';
 
 const partnershipRepository = new CompanyPartnershipRepositoryImpl();

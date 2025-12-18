@@ -41,6 +41,7 @@ model Project {
   members          ProjectMember[]
   sheets           Sheet[]
   projectCompanies ProjectCompany[]
+  projectClients   ProjectClient[]
 
   @@map("projects")
 }
@@ -125,6 +126,7 @@ model Company {
 
   userCompanies    UserCompany[]
   projectCompanies ProjectCompany[]
+  projectClients   ProjectClient[]
   invitations      CompanyInvitation[]
   partnerships1    CompanyPartnership[] @relation("Company1")
   partnerships2    CompanyPartnership[] @relation("Company2")
@@ -189,4 +191,17 @@ model CompanyPartnership {
 
   @@unique([companyId1, companyId2])
   @@map("company_partnerships")
+}
+
+model ProjectClient {
+  id        String   @id @default(uuid())
+  projectId String
+  companyId String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, companyId])
+  @@map("project_clients")
 }

@@ -5,7 +5,8 @@ export class CreateProjectInput {
     public readonly name: string,
     public readonly description?: string,
     public readonly visibility?: ProjectVisibility,
-    public readonly companyIds?: string[]
+    public readonly companyIds?: string[],
+    public readonly clientCompanyIds?: string[]
   ) {}
 }
 

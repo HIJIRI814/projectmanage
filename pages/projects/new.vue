@@ -69,6 +69,37 @@
               </div>
             </FormField>
 
+            <FormField id="clientCompanyIds" label="クライアント（連携企業から選択）">
+              <div v-if="form.companyIds.length === 0" class="text-sm text-muted-foreground">
+                所属会社を選択すると、連携企業が表示されます
+              </div>
+              <div v-else-if="isLoadingPartnerships" class="text-sm text-muted-foreground">
+                読み込み中...
+              </div>
+              <div v-else-if="partnershipsError" class="text-sm text-destructive">
+                {{ partnershipsError }}
+              </div>
+              <div v-else-if="availableClientCompanies.length === 0" class="text-sm text-muted-foreground">
+                選択した所属会社に連携企業がありません
+              </div>
+              <div v-else class="space-y-2 rounded-md border p-4">
+                <label
+                  v-for="company in availableClientCompanies"
+                  :key="company.id"
+                  class="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    :value="company.id"
+                    v-model="form.clientCompanyIds"
+                    :disabled="isLoading"
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span class="text-sm">{{ company.name }}</span>
+                </label>
+              </div>
+            </FormField>
+
             <div v-if="error" class="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
               {{ error }}
             </div>
@@ -112,6 +143,7 @@ const form = ref({
   description: '',
   visibility: 'PRIVATE' as 'PRIVATE' | 'COMPANY_INTERNAL' | 'PUBLIC',
   companyIds: [] as string[],
+  clientCompanyIds: [] as string[],
 })
 
 const isLoading = ref(false)
@@ -141,6 +173,54 @@ watch(isLoadingCompaniesData, (loading) => {
   isLoadingCompanies.value = loading
 })
 
+// 連携企業一覧（選択された所属会社の連携企業）
+const isLoadingPartnerships = ref(false)
+const partnershipsError = ref<string | null>(null)
+const availableClientCompanies = ref<any[]>([])
+
+// 選択された所属会社の連携企業を取得
+const fetchPartnerships = async () => {
+  if (form.value.companyIds.length === 0) {
+    availableClientCompanies.value = []
+    return
+  }
+
+  isLoadingPartnerships.value = true
+  partnershipsError.value = null
+
+  try {
+    // 各所属会社の連携企業を取得
+    const allPartnerships: any[] = []
+    for (const companyId of form.value.companyIds) {
+      const { apiFetch } = useApi()
+      const partnerships = await apiFetch(`/api/companies/${companyId}/partnerships`)
+      if (partnerships && Array.isArray(partnerships)) {
+        allPartnerships.push(...partnerships)
+      }
+    }
+
+    // 重複を除去して、既に所属会社として選択されている会社を除外
+    const uniquePartnerships = Array.from(
+      new Map(
+        allPartnerships.map((p: any) => [p.partnerCompanyId, p])
+      ).values()
+    )
+    
+    availableClientCompanies.value = uniquePartnerships
+      .filter((p: any) => !form.value.companyIds.includes(p.partnerCompanyId))
+      .map((p: any) => ({
+        id: p.partnerCompanyId,
+        name: p.partnerCompanyName,
+      }))
+  } catch (err: any) {
+    partnershipsError.value = err.message || '連携企業の取得に失敗しました'
+  } finally {
+    isLoadingPartnerships.value = false
+  }
+}
+
+watch(() => form.value.companyIds, fetchPartnerships, { deep: true })
+
 const handleSubmit = async () => {
   isLoading.value = true
   error.value = null
@@ -154,6 +234,7 @@ const handleSubmit = async () => {
         description: form.value.description || undefined,
         visibility: form.value.visibility,
         companyIds: form.value.companyIds.length > 0 ? form.value.companyIds : undefined,
+        clientCompanyIds: form.value.clientCompanyIds.length > 0 ? form.value.clientCompanyIds : undefined,
       },
     })
     router.push('/projects')

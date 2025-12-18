@@ -7,6 +7,7 @@ export class Project {
     public readonly description: string | null,
     public readonly visibility: ProjectVisibilityValue,
     public readonly companyIds: string[],
+    public readonly clientCompanyIds: string[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}
@@ -16,7 +17,8 @@ export class Project {
     name: string,
     description: string | null = null,
     visibility: ProjectVisibility = ProjectVisibility.PRIVATE,
-    companyIds: string[] = []
+    companyIds: string[] = [],
+    clientCompanyIds: string[] = []
   ): Project {
     const now = new Date();
     return new Project(
@@ -25,6 +27,7 @@ export class Project {
       description,
       new ProjectVisibilityValue(visibility),
       companyIds,
+      clientCompanyIds,
       now,
       now
     );
@@ -36,6 +39,7 @@ export class Project {
     description: string | null,
     visibility: string,
     companyIds: string[],
+    clientCompanyIds: string[],
     createdAt: Date,
     updatedAt: Date
   ): Project {
@@ -45,6 +49,7 @@ export class Project {
       description,
       ProjectVisibilityValue.fromString(visibility),
       companyIds,
+      clientCompanyIds,
       createdAt,
       updatedAt
     );

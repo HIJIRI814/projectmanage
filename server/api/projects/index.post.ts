@@ -19,6 +19,7 @@ const createProjectSchema = z.object({
   description: z.string().optional(),
   visibility: z.enum(['PRIVATE', 'COMPANY_INTERNAL', 'PUBLIC']).optional(),
   companyIds: z.array(z.string()).optional(),
+  clientCompanyIds: z.array(z.string()).optional(),
 });
 
 async function getCurrentUser(event: any) {
@@ -98,7 +99,8 @@ export default defineEventHandler(async (event) => {
       validationResult.data.name,
       validationResult.data.description,
       visibility,
-      validationResult.data.companyIds
+      validationResult.data.companyIds,
+      validationResult.data.clientCompanyIds
     );
 
     const result = await createProjectUseCase.execute(input);

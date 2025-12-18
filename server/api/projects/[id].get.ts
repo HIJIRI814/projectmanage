@@ -97,6 +97,7 @@ export default defineEventHandler(async (event) => {
       project.description,
       project.visibility.toString(),
       project.companyIds,
+      project.clientCompanyIds,
       project.createdAt,
       project.updatedAt
     );

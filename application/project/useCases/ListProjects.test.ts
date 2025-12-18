@@ -48,6 +48,7 @@ describe('ListProjects', () => {
         projectDescription1,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt1,
         updatedAt1
       );
@@ -57,6 +58,7 @@ describe('ListProjects', () => {
         projectDescription2,
         ProjectVisibility.COMPANY_INTERNAL,
         ['company-1'],
+        [],
         createdAt2,
         updatedAt2
       );
@@ -93,6 +95,7 @@ describe('ListProjects', () => {
         projectName1,
         null,
         ProjectVisibility.PRIVATE,
+        [],
         [],
         createdAt,
         updatedAt

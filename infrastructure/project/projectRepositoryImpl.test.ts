@@ -16,6 +16,10 @@ vi.mock('../prisma/prismaClient', () => ({
       createMany: vi.fn(),
       deleteMany: vi.fn(),
     },
+    projectClient: {
+      createMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
@@ -42,6 +46,7 @@ describe('ProjectRepositoryImpl', () => {
         createdAt,
         updatedAt,
         projectCompanies: [],
+        projectClients: [],
       };
 
       vi.mocked(prismaClient.project.findUnique).mockResolvedValue(mockProjectData);
@@ -54,7 +59,7 @@ describe('ProjectRepositoryImpl', () => {
       expect(project?.description).toBe(projectDescription);
       expect(prismaClient.project.findUnique).toHaveBeenCalledWith({
         where: { id: projectId },
-        include: { projectCompanies: true },
+        include: { projectCompanies: true, projectClients: true },
       });
     });
 
@@ -66,7 +71,7 @@ describe('ProjectRepositoryImpl', () => {
       expect(project).toBeNull();
       expect(prismaClient.project.findUnique).toHaveBeenCalledWith({
         where: { id: projectId },
-        include: { projectCompanies: true },
+        include: { projectCompanies: true, projectClients: true },
       });
     });
   });
@@ -82,6 +87,7 @@ describe('ProjectRepositoryImpl', () => {
           createdAt,
           updatedAt,
           projectCompanies: [],
+        projectClients: [],
         },
         {
           id: 'project-id-2',
@@ -91,6 +97,7 @@ describe('ProjectRepositoryImpl', () => {
           createdAt,
           updatedAt,
           projectCompanies: [{ companyId: 'company-1' }],
+          projectClients: [],
         },
       ];
 
@@ -104,7 +111,7 @@ describe('ProjectRepositoryImpl', () => {
       expect(projects[1].id).toBe('project-id-2');
       expect(prismaClient.project.findMany).toHaveBeenCalledWith({
         orderBy: { createdAt: 'desc' },
-        include: { projectCompanies: true },
+        include: { projectCompanies: true, projectClients: true },
       });
     });
 
@@ -126,6 +133,7 @@ describe('ProjectRepositoryImpl', () => {
           createdAt,
           updatedAt,
           projectCompanies: [],
+        projectClients: [],
         },
       ];
 
@@ -146,6 +154,7 @@ describe('ProjectRepositoryImpl', () => {
         projectDescription,
         'PRIVATE',
         [],
+        [],
         createdAt,
         updatedAt
       );
@@ -158,12 +167,15 @@ describe('ProjectRepositoryImpl', () => {
         createdAt,
         updatedAt,
         projectCompanies: [],
+        projectClients: [],
       };
 
       vi.mocked(prismaClient.project.upsert).mockResolvedValue(mockProjectData);
       vi.mocked(prismaClient.project.findUnique).mockResolvedValue(mockProjectData);
       vi.mocked(prismaClient.projectCompany.createMany).mockResolvedValue({ count: 0 });
       vi.mocked(prismaClient.projectCompany.deleteMany).mockResolvedValue({ count: 0 });
+      vi.mocked(prismaClient.projectClient.createMany).mockResolvedValue({ count: 0 });
+      vi.mocked(prismaClient.projectClient.deleteMany).mockResolvedValue({ count: 0 });
 
       const savedProject = await repository.save(project);
 
@@ -185,7 +197,7 @@ describe('ProjectRepositoryImpl', () => {
           createdAt,
           updatedAt,
         },
-        include: { projectCompanies: true },
+        include: { projectCompanies: true, projectClients: true },
       });
     });
 
@@ -196,6 +208,7 @@ describe('ProjectRepositoryImpl', () => {
         'Updated Description',
         'COMPANY_INTERNAL',
         ['company-1'],
+        [],
         createdAt,
         updatedAt
       );
@@ -208,12 +221,14 @@ describe('ProjectRepositoryImpl', () => {
         createdAt,
         updatedAt: new Date(),
         projectCompanies: [],
+        projectClients: [],
       };
 
       vi.mocked(prismaClient.project.upsert).mockResolvedValue(mockProjectData);
       vi.mocked(prismaClient.project.findUnique).mockResolvedValue({
         ...mockProjectData,
         projectCompanies: [{ companyId: 'company-1' }],
+        projectClients: [],
       });
       vi.mocked(prismaClient.projectCompany.createMany).mockResolvedValue({ count: 0 });
       vi.mocked(prismaClient.projectCompany.deleteMany).mockResolvedValue({ count: 0 });
@@ -232,6 +247,7 @@ describe('ProjectRepositoryImpl', () => {
         null,
         'PRIVATE',
         [],
+        [],
         createdAt,
         updatedAt
       );
@@ -244,12 +260,15 @@ describe('ProjectRepositoryImpl', () => {
         createdAt,
         updatedAt,
         projectCompanies: [],
+        projectClients: [],
       };
 
       vi.mocked(prismaClient.project.upsert).mockResolvedValue(mockProjectData);
       vi.mocked(prismaClient.project.findUnique).mockResolvedValue(mockProjectData);
       vi.mocked(prismaClient.projectCompany.createMany).mockResolvedValue({ count: 0 });
       vi.mocked(prismaClient.projectCompany.deleteMany).mockResolvedValue({ count: 0 });
+      vi.mocked(prismaClient.projectClient.createMany).mockResolvedValue({ count: 0 });
+      vi.mocked(prismaClient.projectClient.deleteMany).mockResolvedValue({ count: 0 });
 
       const savedProject = await repository.save(project);
 

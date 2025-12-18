@@ -8,6 +8,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       where: { id },
       include: {
         projectCompanies: true,
+        projectClients: true,
       },
     });
 
@@ -16,6 +17,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
     }
 
     const companyIds = projectData.projectCompanies.map((pc) => pc.companyId);
+    const clientCompanyIds = projectData.projectClients.map((pc) => pc.companyId);
 
     return Project.reconstruct(
       projectData.id,
@@ -23,6 +25,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       projectData.description,
       projectData.visibility,
       companyIds,
+      clientCompanyIds,
       projectData.createdAt,
       projectData.updatedAt
     );
@@ -33,17 +36,20 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       orderBy: { createdAt: 'desc' },
       include: {
         projectCompanies: true,
+        projectClients: true,
       },
     });
 
     return projectsData.map((projectData) => {
       const companyIds = projectData.projectCompanies.map((pc) => pc.companyId);
+      const clientCompanyIds = projectData.projectClients.map((pc) => pc.companyId);
       return Project.reconstruct(
         projectData.id,
         projectData.name,
         projectData.description,
         projectData.visibility,
         companyIds,
+        clientCompanyIds,
         projectData.createdAt,
         projectData.updatedAt
       );
@@ -69,6 +75,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       },
       include: {
         projectCompanies: true,
+        projectClients: true,
       },
     });
 
@@ -99,11 +106,39 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       });
     }
 
+    // ProjectClientのリレーションを更新
+    const existingClientCompanyIds = projectData.projectClients.map((pc) => pc.companyId);
+    const newClientCompanyIds = project.clientCompanyIds.filter((id) => !existingClientCompanyIds.includes(id));
+    const removedClientCompanyIds = existingClientCompanyIds.filter((id) => !project.clientCompanyIds.includes(id));
+
+    // 新しいクライアント会社を追加
+    if (newClientCompanyIds.length > 0) {
+      await prismaClient.projectClient.createMany({
+        data: newClientCompanyIds.map((companyId) => ({
+          id: crypto.randomUUID(),
+          projectId: project.id,
+          companyId,
+          createdAt: new Date(),
+        })),
+      });
+    }
+
+    // 削除されたクライアント会社を削除
+    if (removedClientCompanyIds.length > 0) {
+      await prismaClient.projectClient.deleteMany({
+        where: {
+          projectId: project.id,
+          companyId: { in: removedClientCompanyIds },
+        },
+      });
+    }
+
     // 更新後のデータを取得
     const updatedProjectData = await prismaClient.project.findUnique({
       where: { id: project.id },
       include: {
         projectCompanies: true,
+        projectClients: true,
       },
     });
 
@@ -112,6 +147,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
     }
 
     const companyIds = updatedProjectData.projectCompanies.map((pc) => pc.companyId);
+    const clientCompanyIds = updatedProjectData.projectClients.map((pc) => pc.companyId);
 
     return Project.reconstruct(
       updatedProjectData.id,
@@ -119,6 +155,7 @@ export class ProjectRepositoryImpl implements IProjectRepository {
       updatedProjectData.description,
       updatedProjectData.visibility,
       companyIds,
+      clientCompanyIds,
       updatedProjectData.createdAt,
       updatedProjectData.updatedAt
     );

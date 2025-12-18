@@ -33,6 +33,7 @@ describe('CreateProject', () => {
         projectDescription,
         ProjectVisibility.PRIVATE,
         [],
+        [],
         createdAt,
         updatedAt
       );

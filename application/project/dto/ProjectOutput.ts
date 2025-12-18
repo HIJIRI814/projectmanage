@@ -5,6 +5,7 @@ export class ProjectOutput {
     public readonly description: string | null,
     public readonly visibility: string,
     public readonly companyIds: string[],
+    public readonly clientCompanyIds: string[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}

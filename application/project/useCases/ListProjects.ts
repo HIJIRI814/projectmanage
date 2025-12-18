@@ -15,6 +15,7 @@ export class ListProjects {
           project.description,
           project.visibility.toString(),
           project.companyIds,
+          project.clientCompanyIds,
           project.createdAt,
           project.updatedAt
         )
