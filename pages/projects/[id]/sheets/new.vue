@@ -281,6 +281,7 @@ const handleDrop = (event: DragEvent) => {
 const handleSubmit = async () => {
   isLoading.value = true;
   error.value = null;
+  imageError.value = null;
 
   try {
     const { apiFetch } = useApi();
@@ -295,10 +296,15 @@ const handleSubmit = async () => {
     if (imageFile.value) {
       const formData = new FormData();
       formData.append('file', imageFile.value);
-      await apiFetch(`/api/projects/${projectId}/sheets/${created.id}/image`, {
-        method: 'POST',
-        body: formData,
-      });
+      try {
+        await apiFetch(`/api/projects/${projectId}/sheets/${created.id}/image`, {
+          method: 'POST',
+          body: formData,
+        });
+      } catch (imageErr: any) {
+        imageError.value = imageErr.message || '画像のアップロードに失敗しました';
+        return;
+      }
     }
     router.push(`/projects/${projectId}/sheets/${created.id}`);
   } catch (err: any) {

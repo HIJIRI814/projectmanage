@@ -70,6 +70,7 @@ model Sheet {
 
   project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   versions SheetVersion[]
+  markers  SheetMarker[]
 
   @@map("sheets")
 }
@@ -84,9 +85,29 @@ model SheetVersion {
   versionName String
   createdAt   DateTime @default(now())
 
-  sheet Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheet   Sheet         @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  markers SheetMarker[]
 
   @@map("sheet_versions")
+}
+
+model SheetMarker {
+  id             String   @id @default(uuid())
+  sheetId        String
+  sheetVersionId String?
+  type           String // 'number' | 'square'
+  x              Float // 0-100のパーセンテージ
+  y              Float // 0-100のパーセンテージ
+  width          Float? // 四角タイプの場合のみ
+  height         Float? // 四角タイプの場合のみ
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sheet        Sheet         @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetVersion SheetVersion? @relation(fields: [sheetVersionId], references: [id], onDelete: Cascade)
+
+  @@map("sheet_markers")
 }
 
 enum InvitationStatus {
@@ -105,6 +126,8 @@ model Company {
   userCompanies    UserCompany[]
   projectCompanies ProjectCompany[]
   invitations      CompanyInvitation[]
+  partnerships1    CompanyPartnership[] @relation("Company1")
+  partnerships2    CompanyPartnership[] @relation("Company2")
 
   @@map("companies")
 }
@@ -144,7 +167,7 @@ model CompanyInvitation {
   token     String           @unique
   userType  Int              @default(4) // 1: ADMINISTRATOR, 2: MEMBER, 3: PARTNER, 4: CUSTOMER
   status    InvitationStatus @default(PENDING)
-  invitedBy String           // 招待したユーザーID
+  invitedBy String // 招待したユーザーID
   expiresAt DateTime
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -153,4 +176,17 @@ model CompanyInvitation {
 
   @@unique([companyId, email, status])
   @@map("company_invitations")
+}
+
+model CompanyPartnership {
+  id         String   @id @default(uuid())
+  companyId1 String
+  companyId2 String
+  createdAt  DateTime @default(now())
+
+  company1 Company @relation("Company1", fields: [companyId1], references: [id], onDelete: Cascade)
+  company2 Company @relation("Company2", fields: [companyId2], references: [id], onDelete: Cascade)
+
+  @@unique([companyId1, companyId2])
+  @@map("company_partnerships")
 }

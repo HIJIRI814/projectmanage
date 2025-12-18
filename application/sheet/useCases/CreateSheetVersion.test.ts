@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateSheetVersion } from './CreateSheetVersion';
 import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
 import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
+import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
 import { IImageBackupService } from '../../../domain/sheet/service/IImageBackupService';
 import { CreateSheetVersionInput } from '../dto/CreateSheetVersionInput';
 import { Sheet } from '../../../domain/sheet/model/Sheet';
@@ -16,6 +17,7 @@ describe('CreateSheetVersion', () => {
   let createSheetVersion: CreateSheetVersion;
   let mockSheetRepository: ISheetRepository;
   let mockSheetVersionRepository: ISheetVersionRepository;
+  let mockSheetMarkerRepository: ISheetMarkerRepository;
   let mockImageBackupService: IImageBackupService;
 
   const sheetId = 'test-sheet-id';
@@ -39,6 +41,16 @@ describe('CreateSheetVersion', () => {
       delete: vi.fn(),
     };
 
+    mockSheetMarkerRepository = {
+      findById: vi.fn(),
+      findBySheetId: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      copyBySheetId: vi.fn(),
+      copyMarkersForVersion: vi.fn(),
+    };
+
     mockImageBackupService = {
       backupImage: vi.fn(),
     };
@@ -46,6 +58,7 @@ describe('CreateSheetVersion', () => {
     createSheetVersion = new CreateSheetVersion(
       mockSheetRepository,
       mockSheetVersionRepository,
+      mockSheetMarkerRepository,
       mockImageBackupService
     );
   });
@@ -78,6 +91,7 @@ describe('CreateSheetVersion', () => {
       vi.mocked(mockSheetRepository.findById).mockResolvedValue(sheet);
       vi.mocked(mockImageBackupService.backupImage).mockResolvedValue('https://example.com/img.png');
       vi.mocked(mockSheetVersionRepository.save).mockResolvedValue(savedVersion);
+      vi.mocked(mockSheetMarkerRepository.copyMarkersForVersion).mockResolvedValue([]);
 
       const input = new CreateSheetVersionInput();
       const result = await createSheetVersion.execute(sheetId, input);

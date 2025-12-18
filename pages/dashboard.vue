@@ -35,7 +35,7 @@
           </CardHeader>
           <CardContent class="space-y-2">
             <Button variant="outline" class="w-full justify-start" as-child>
-              <NuxtLink to="/projects">
+              <NuxtLink to="/projects" class="flex items-center">
                 <FolderKanban class="mr-2 h-4 w-4" />
                 プロジェクト一覧
               </NuxtLink>

@@ -6,9 +6,25 @@ import { ref, watch, onMounted } from 'vue';
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'test-access-secret';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret';
 
+// fsモジュールをモック
+vi.mock('fs', () => ({
+  promises: {
+    appendFile: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// $fetchをモック
+globalThis.$fetch = vi.fn();
+
 // Nuxtのグローバル関数をモック
 globalThis.defineEventHandler = vi.fn((handler: any) => handler);
 globalThis.readBody = vi.fn();
+globalThis.readMultipartFormData = vi.fn();
+globalThis.setCookie = vi.fn();
+globalThis.getCookie = vi.fn();
+globalThis.getHeader = vi.fn();
 globalThis.createError = vi.fn((error: any) => {
   const err = new Error(error.statusMessage || 'Error');
   (err as any).statusCode = error.statusCode;

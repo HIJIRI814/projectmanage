@@ -30,8 +30,47 @@
         </div>
         <div class="info-item" v-if="displayImageUrl">
           <label>画像:</label>
-          <div class="image-wrapper">
-            <img :src="displayImageUrl" alt="シート画像" />
+          <div class="image-wrapper" ref="imageWrapperRef">
+            <img
+              ref="imageRef"
+              :src="displayImageUrl"
+              alt="シート画像"
+              @load="handleImageLoad"
+            />
+            <div
+              v-for="marker in sortedMarkers"
+              :key="marker.id"
+              :class="['marker', `marker-${marker.type}`, 'marker-readonly']"
+              :style="getMarkerStyle(marker)"
+              @mouseenter="hoveredMarkerId = marker.id"
+              @mouseleave="hoveredMarkerId = null"
+            >
+              <span v-if="marker.type === 'number'" class="marker-number">
+                {{ getMarkerNumber(marker) }}
+              </span>
+            </div>
+          </div>
+          <div v-if="tableMarkers.length > 0" class="markers-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>番号</th>
+                  <th>メモ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="marker in tableMarkers" :key="marker.id">
+                  <td>{{ getMarkerNumber(marker) }}</td>
+                  <td>
+                    <input
+                      :value="markerNotes[marker.id]"
+                      disabled
+                      class="note-input"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         <div class="info-item">
@@ -137,11 +176,36 @@ const isSavingVersion = ref(false);
 const isRestoringVersion = ref(false);
 const isLoadingVersions = ref(false);
 
+const selectedMarkerType = ref<'number' | 'square'>('number');
+const markers = ref<any[]>([]);
+const markerNotes = ref<Record<string, string>>({});
+const imageRef = ref<HTMLImageElement | null>(null);
+const imageWrapperRef = ref<HTMLDivElement | null>(null);
+const isDragging = ref(false);
+const isResizing = ref(false);
+const justFinishedResizing = ref(false);
+const hoveredMarkerId = ref<string | null>(null);
+const dragStartPos = ref({ x: 0, y: 0 });
+const dragMarker = ref<any>(null);
+const resizeMarker = ref<any>(null);
+const resizeStartPos = ref({ x: 0, y: 0, width: 0, height: 0 });
+
 const { data: sheetData, error: fetchError, isLoading: isLoadingSheetData, refresh: refreshSheet } = useApiFetch(
   `/api/projects/${projectId}/sheets/${sheetId}`
 );
 
+// #region agent log
+onMounted(() => {
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:onMounted',message:'Page mounted',data:{sheetId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+  // ページ遷移時にデータを再取得
+  refreshSheet();
+});
+// #endregion
+
 watch(sheetData, (newSheet) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:watch-sheetData',message:'Sheet data updated',data:{hasNewSheet:!!newSheet,imageUrl:newSheet?.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+  // #endregion
   if (newSheet) {
     sheet.value = newSheet;
     isLoading.value = false;
@@ -176,6 +240,312 @@ onMounted(() => {
   loadVersions();
 });
 
+const loadMarkers = async () => {
+  try {
+    const { apiFetch } = useApi();
+    const versionId = selectedVersionId.value || null;
+    const url = `/api/projects/${projectId}/sheets/${sheetId}/markers${versionId ? `?versionId=${versionId}` : ''}`;
+    const markersData = await apiFetch(url);
+    markers.value = markersData;
+    markerNotes.value = {};
+    markersData.forEach((marker: any) => {
+      markerNotes.value[marker.id] = marker.note || '';
+    });
+  } catch (err: any) {
+    console.error('Failed to load markers:', err);
+  }
+};
+
+const sortedMarkers = computed(() => {
+  // 登録順（作成日時順）でソート
+  return [...markers.value].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateA - dateB;
+  });
+});
+
+const tableMarkers = computed(() => {
+  // テーブルには番号タイプのマーカーのみを表示
+  return sortedMarkers.value.filter((m) => m.type === 'number');
+});
+
+const getMarkerNumber = (marker: any) => {
+  if (marker.type !== 'number') return '';
+  // 登録順で番号を割り当て
+  const numberMarkers = sortedMarkers.value.filter((m) => m.type === 'number');
+  const index = numberMarkers.findIndex((m) => m.id === marker.id);
+  const numbers = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  return numbers[index] || `${index + 1}`;
+};
+
+const getMarkerStyle = (marker: any) => {
+  if (!imageRef.value) return {};
+  
+  const imgRect = imageRef.value.getBoundingClientRect();
+  const wrapperRect = imageWrapperRef.value?.getBoundingClientRect() || { left: 0, top: 0 };
+  
+  if (marker.type === 'number') {
+    return {
+      left: `${marker.x}%`,
+      top: `${marker.y}%`,
+      transform: 'translate(-50%, -50%)',
+    };
+  } else {
+    return {
+      left: `${marker.x}%`,
+      top: `${marker.y}%`,
+      width: `${marker.width || 10}%`,
+      height: `${marker.height || 10}%`,
+      transform: 'translate(-50%, -50%)',
+    };
+  }
+};
+
+const handleImageLoad = () => {
+  loadMarkers();
+};
+
+const handleImageClick = (event: MouseEvent) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleImageClick',message:'Image click handler called',data:{canManageProjects:canManageProjects.value,hasImageRef:!!imageRef.value,isDragging:isDragging.value,isResizing:isResizing.value,justFinishedResizing:justFinishedResizing.value,selectedMarkerType:selectedMarkerType.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
+  
+  // リサイズ終了直後のクリックを無視
+  if (justFinishedResizing.value) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleImageClick',message:'Ignoring click after resize',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
+    justFinishedResizing.value = false;
+    return;
+  }
+  
+  if (!canManageProjects.value || !imageRef.value || isDragging.value || isResizing.value) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleImageClick',message:'Early return from image click',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    return;
+  }
+  
+  const imgRect = imageRef.value.getBoundingClientRect();
+  const wrapperRect = imageWrapperRef.value?.getBoundingClientRect() || { left: 0, top: 0 };
+  
+  const x = ((event.clientX - imgRect.left) / imgRect.width) * 100;
+  const y = ((event.clientY - imgRect.top) / imgRect.height) * 100;
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleImageClick',message:'Calculated coordinates',data:{x,y,imgRect:{width:imgRect.width,height:imgRect.height,left:imgRect.left,top:imgRect.top},eventPos:{clientX:event.clientX,clientY:event.clientY}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
+  
+  createMarker(x, y);
+};
+
+const createMarker = async (x: number, y: number) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:createMarker',message:'createMarker called',data:{x,y,selectedMarkerType:selectedMarkerType.value,projectId,sheetId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  try {
+    const { apiFetch } = useApi();
+    const payload: any = {
+      type: selectedMarkerType.value,
+      x,
+      y,
+    };
+    
+    if (selectedMarkerType.value === 'square') {
+      payload.width = 10;
+      payload.height = 10;
+    }
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:createMarker',message:'Before API call',data:{payload,url:`/api/projects/${projectId}/sheets/${sheetId}/markers`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    const newMarker = await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers`, {
+      method: 'POST',
+      body: payload,
+    });
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:createMarker',message:'API call succeeded',data:{newMarker},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    markers.value.push(newMarker);
+    markerNotes.value[newMarker.id] = '';
+  } catch (err: any) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:createMarker',message:'API call failed',data:{error:err.message,errorStack:err.stack,errorStatus:err.statusCode,errorData:err.data},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    console.error('Failed to create marker:', err);
+    alert('マーカーの作成に失敗しました');
+  }
+};
+
+const handleMarkerMouseDown = (event: MouseEvent, marker: any) => {
+  if (!canManageProjects.value || isResizing.value) return;
+  
+  event.preventDefault();
+  isDragging.value = true;
+  dragMarker.value = marker;
+  dragStartPos.value = { x: event.clientX, y: event.clientY };
+  
+  document.addEventListener('mousemove', handleMarkerDrag);
+  document.addEventListener('mouseup', handleMarkerDragEnd);
+};
+
+const handleMarkerDrag = (event: MouseEvent) => {
+  if (!isDragging.value || !dragMarker.value || !imageRef.value) return;
+  
+  const imgRect = imageRef.value.getBoundingClientRect();
+  const x = ((event.clientX - imgRect.left) / imgRect.width) * 100;
+  const y = ((event.clientY - imgRect.top) / imgRect.height) * 100;
+  
+  const clampedX = Math.max(0, Math.min(100, x));
+  const clampedY = Math.max(0, Math.min(100, y));
+  
+  const markerIndex = markers.value.findIndex((m) => m.id === dragMarker.value.id);
+  if (markerIndex !== -1) {
+    markers.value[markerIndex] = { ...markers.value[markerIndex], x: clampedX, y: clampedY };
+  }
+};
+
+const handleMarkerDragEnd = async () => {
+  if (!isDragging.value || !dragMarker.value) return;
+  
+  isDragging.value = false;
+  const marker = markers.value.find((m) => m.id === dragMarker.value.id);
+  
+  if (marker) {
+    try {
+      const { apiFetch } = useApi();
+      await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${marker.id}`, {
+        method: 'PUT',
+        body: {
+          x: marker.x,
+          y: marker.y,
+        },
+      });
+    } catch (err: any) {
+      console.error('Failed to update marker:', err);
+      await loadMarkers();
+    }
+  }
+  
+  dragMarker.value = null;
+  document.removeEventListener('mousemove', handleMarkerDrag);
+  document.removeEventListener('mouseup', handleMarkerDragEnd);
+};
+
+const handleResizeStart = (event: MouseEvent, marker: any) => {
+  if (!canManageProjects.value) return;
+  
+  event.preventDefault();
+  event.stopPropagation();
+  isResizing.value = true;
+  resizeMarker.value = marker;
+  resizeStartPos.value = {
+    x: event.clientX,
+    y: event.clientY,
+    width: marker.width || 10,
+    height: marker.height || 10,
+  };
+  
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', handleResizeEnd);
+};
+
+const handleResize = (event: MouseEvent) => {
+  if (!isResizing.value || !resizeMarker.value || !imageRef.value) return;
+  
+  const imgRect = imageRef.value.getBoundingClientRect();
+  const deltaX = ((event.clientX - resizeStartPos.value.x) / imgRect.width) * 100;
+  const deltaY = ((event.clientY - resizeStartPos.value.y) / imgRect.height) * 100;
+  
+  const newWidth = Math.max(5, Math.min(100, resizeStartPos.value.width + deltaX * 2));
+  const newHeight = Math.max(5, Math.min(100, resizeStartPos.value.height + deltaY * 2));
+  
+  const markerIndex = markers.value.findIndex((m) => m.id === resizeMarker.value.id);
+  if (markerIndex !== -1) {
+    markers.value[markerIndex] = {
+      ...markers.value[markerIndex],
+      width: newWidth,
+      height: newHeight,
+    };
+  }
+};
+
+const handleResizeEnd = async (event?: MouseEvent) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleResizeEnd',message:'Resize end called',data:{isResizing:isResizing.value,hasResizeMarker:!!resizeMarker.value,hasEvent:!!event},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
+  
+  if (!isResizing.value || !resizeMarker.value) return;
+  
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  // リサイズ終了フラグを設定（isResizingをfalseにする前に）
+  justFinishedResizing.value = true;
+  isResizing.value = false;
+  const marker = markers.value.find((m) => m.id === resizeMarker.value.id);
+  
+  if (marker) {
+    try {
+      const { apiFetch } = useApi();
+      await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${marker.id}`, {
+        method: 'PUT',
+        body: {
+          width: marker.width,
+          height: marker.height,
+        },
+      });
+    } catch (err: any) {
+      console.error('Failed to update marker:', err);
+      await loadMarkers();
+    }
+  }
+  
+  resizeMarker.value = null;
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', handleResizeEnd);
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleResizeEnd',message:'Resize end completed',data:{justFinishedResizing:justFinishedResizing.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
+};
+
+const updateMarkerNote = async (markerId: string) => {
+  try {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${markerId}`, {
+      method: 'PUT',
+      body: {
+        note: markerNotes.value[markerId] || null,
+      },
+    });
+  } catch (err: any) {
+    console.error('Failed to update marker note:', err);
+  }
+};
+
+const deleteMarker = async (markerId: string) => {
+  if (!confirm('このマーカーを削除しますか？')) return;
+  
+  try {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${markerId}`, {
+      method: 'DELETE',
+    });
+    markers.value = markers.value.filter((m) => m.id !== markerId);
+    delete markerNotes.value[markerId];
+  } catch (err: any) {
+    console.error('Failed to delete marker:', err);
+    alert('マーカーの削除に失敗しました');
+  }
+};
+
 // 選択されたバージョンの内容を取得
 const handleVersionChange = async () => {
   // #region agent log
@@ -186,6 +556,7 @@ const handleVersionChange = async () => {
     fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Clearing selectedVersion',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     selectedVersion.value = null;
+    await loadMarkers();
     return;
   }
 
@@ -201,6 +572,7 @@ const handleVersionChange = async () => {
     fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'Version data received',data:{versionId:versionData.id,hasImageUrl:!!versionData.imageUrl,imageUrl:versionData.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     selectedVersion.value = versionData;
+    await loadMarkers();
     // #region agent log
     fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.vue:handleVersionChange',message:'selectedVersion updated',data:{selectedVersionImageUrl:selectedVersion.value?.imageUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
@@ -407,11 +779,177 @@ h1 {
   color: #2d3748;
 }
 
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
 .image-wrapper img {
   width: 100%;
   height: auto;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  display: block;
+}
+
+.marker-type-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.marker-type-button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.marker-type-button:hover {
+  background-color: #f7fafc;
+}
+
+.marker-type-button.active {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.marker {
+  position: absolute;
+  cursor: default;
+  user-select: none;
+}
+
+.marker-readonly {
+  cursor: default;
+}
+
+.marker-delete-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background-color: #e53e3e;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.marker-delete-button:hover {
+  background-color: #c53030;
+}
+
+.marker-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.marker-square {
+  border: 2px solid #667eea;
+  background-color: rgba(102, 126, 234, 0.1);
+  box-sizing: border-box;
+}
+
+.marker-square .resize-handle {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background-color: #667eea;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: nwse-resize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.markers-table {
+  margin-top: 16px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.markers-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markers-table th,
+.markers-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.markers-table th {
+  background-color: #f7fafc;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.markers-table tr:last-child td {
+  border-bottom: none;
+}
+
+.note-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.note-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.delete-marker-button {
+  padding: 4px 12px;
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 0.2s;
+}
+
+.delete-marker-button:hover {
+  background-color: #c53030;
+}
+
+.readonly-indicator {
+  color: #a0aec0;
+  font-size: 14px;
 }
 
 .sheet-content {

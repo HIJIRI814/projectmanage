@@ -13,17 +13,20 @@ const mockFindByUserId = vi.fn();
 const mockVerifyAccessToken = vi.fn();
 const mockMkdir = vi.fn();
 const mockWriteFile = vi.fn();
+const mockAppendFile = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('fs', () => ({
   default: {
     promises: {
       mkdir: mockMkdir,
       writeFile: mockWriteFile,
+      appendFile: mockAppendFile,
     },
   },
   promises: {
     mkdir: mockMkdir,
     writeFile: mockWriteFile,
+    appendFile: mockAppendFile,
   },
 }));
 

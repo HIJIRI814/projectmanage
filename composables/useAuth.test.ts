@@ -2,9 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useAuth } from './useAuth';
 import { useAuthStore } from '../stores/auth';
+import { ref } from 'vue';
 
-// useFetchをモック
-globalThis.useFetch = vi.fn();
+// $fetchをモック
+globalThis.$fetch = vi.fn();
+
+// useCookieをモック
+globalThis.useCookie = vi.fn(() => ref<string | null>(null));
 
 describe('useAuth', () => {
   beforeEach(() => {
@@ -39,10 +43,7 @@ describe('useAuth', () => {
         },
       };
 
-      vi.mocked(globalThis.useFetch).mockResolvedValue({
-        data: { value: mockResponse },
-        error: { value: null },
-      } as any);
+      vi.mocked(globalThis.$fetch).mockResolvedValue(mockResponse);
 
       await auth.login(email, password);
 
@@ -57,12 +58,15 @@ describe('useAuth', () => {
       const email = 'test@example.com';
       const password = 'wrongpassword';
 
-      vi.mocked(globalThis.useFetch).mockResolvedValue({
-        data: { value: null },
-        error: { value: { message: 'Invalid credentials' } },
-      } as any);
+      const mockError = {
+        data: {
+          statusMessage: 'Invalid credentials',
+        },
+      };
 
-      await expect(auth.login(email, password)).rejects.toThrow();
+      vi.mocked(globalThis.$fetch).mockRejectedValue(mockError);
+
+      await expect(auth.login(email, password)).rejects.toEqual(mockError);
     });
   });
 

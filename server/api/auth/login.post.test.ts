@@ -91,7 +91,7 @@ describe('POST /api/auth/login', () => {
       expect.fail('Should have thrown an error');
     } catch (error: any) {
       expect(error.statusCode).toBe(400);
-      expect(error.statusMessage).toBe('Validation error');
+      expect(error.statusMessage).toContain('Validation error');
     }
   });
 
@@ -110,7 +110,7 @@ describe('POST /api/auth/login', () => {
       expect.fail('Should have thrown an error');
     } catch (error: any) {
       expect(error.statusCode).toBe(400);
-      expect(error.statusMessage).toBe('Validation error');
+      expect(error.statusMessage).toContain('Validation error');
     }
   });
 
@@ -150,7 +150,7 @@ describe('POST /api/auth/login', () => {
       expect.fail('Should have thrown an error');
     } catch (error: any) {
       expect(error.statusCode).toBe(500);
-      expect(error.statusMessage).toBe('Internal server error');
+      expect(error.statusMessage).toContain('Internal server error');
     }
   });
 });

@@ -15,17 +15,43 @@
           </p>
         </div>
         <div v-if="canEditProject" class="flex gap-2">
-          <Button variant="outline" as-child>
-            <NuxtLink :to="`/projects/${projectId}/edit`">
-              編集
-            </NuxtLink>
-          </Button>
-          <Button as-child>
-            <NuxtLink :to="`/projects/${projectId}/sheets/new`">
-              <Plus class="mr-2 h-4 w-4" />
-              シート作成
-            </NuxtLink>
-          </Button>
+          <div class="hidden md:flex gap-2">
+            <Button variant="outline" as-child>
+              <NuxtLink :to="`/projects/${projectId}/edit`">
+                編集
+              </NuxtLink>
+            </Button>
+            <Button as-child>
+              <NuxtLink :to="`/projects/${projectId}/sheets/new`">
+                <Plus class="mr-2 h-4 w-4" />
+                シート作成
+              </NuxtLink>
+            </Button>
+          </div>
+          <div class="md:hidden relative">
+            <Button variant="outline" size="icon" @click="showMobileMenu = !showMobileMenu">
+              <Menu class="h-4 w-4" />
+            </Button>
+            <div
+              v-if="showMobileMenu"
+              class="absolute right-0 top-full mt-2 w-48 rounded-md border bg-background shadow-lg z-10"
+            >
+              <NuxtLink
+                :to="`/projects/${projectId}/edit`"
+                class="block px-4 py-2 text-sm hover:bg-accent"
+                @click="showMobileMenu = false"
+              >
+                編集
+              </NuxtLink>
+              <NuxtLink
+                :to="`/projects/${projectId}/sheets/new`"
+                class="block px-4 py-2 text-sm hover:bg-accent"
+                @click="showMobileMenu = false"
+              >
+                シート作成
+              </NuxtLink>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -93,7 +119,7 @@ definePageMeta({
 })
 
 import { UserType } from '~/domain/user/model/UserType'
-import { Plus } from 'lucide-vue-next'
+import { Plus, Menu } from 'lucide-vue-next'
 import DashboardLayout from '~/components/templates/DashboardLayout.vue'
 import Card from '~/components/atoms/Card.vue'
 import CardHeader from '~/components/atoms/CardHeader.vue'
@@ -134,6 +160,8 @@ const { data: project, isLoading: isLoadingProject, error: projectError } = useA
 const { data: sheets, error: sheetsError, isLoading: isLoadingSheets } = useApiFetch(
   `/api/projects/${projectId}/sheets`
 )
+
+const showMobileMenu = ref(false)
 
 const formatDate = (date: string | Date) => {
   const d = typeof date === 'string' ? new Date(date) : date

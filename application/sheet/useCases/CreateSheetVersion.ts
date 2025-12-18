@@ -1,5 +1,6 @@
 import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
 import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
+import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
 import { IImageBackupService } from '../../../domain/sheet/service/IImageBackupService';
 import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
 import { CreateSheetVersionInput } from '../dto/CreateSheetVersionInput';
@@ -10,6 +11,7 @@ export class CreateSheetVersion {
   constructor(
     private sheetRepository: ISheetRepository,
     private sheetVersionRepository: ISheetVersionRepository,
+    private sheetMarkerRepository: ISheetMarkerRepository,
     private imageBackupService: IImageBackupService
   ) {}
 
@@ -32,6 +34,8 @@ export class CreateSheetVersion {
     );
 
     const savedVersion = await this.sheetVersionRepository.save(version);
+
+    await this.sheetMarkerRepository.copyMarkersForVersion(sheetId, savedVersion.id);
 
     return new SheetVersionOutput(
       savedVersion.id,
