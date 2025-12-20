@@ -1,4 +1,4 @@
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
 import { CompanyOutput } from '../dto/CompanyOutput';
 
 export class GetCompany {

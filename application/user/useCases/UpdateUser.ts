@@ -1,10 +1,10 @@
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { User } from '../../../domain/user/model/User';
-import { Email } from '../../../domain/user/model/Email';
-import { PasswordHash } from '../../../domain/user/model/PasswordHash';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
+import { PasswordHash } from '~domain/user/model/PasswordHash';
 import { UpdateUserInput } from '../dto/UpdateUserInput';
 import { UserOutput } from '../dto/UserOutput';
-import { UserType } from '../../../domain/user/model/UserType';
+import { UserType } from '~domain/user/model/UserType';
 
 export class UpdateUser {
   constructor(private userRepository: IUserRepository) {}

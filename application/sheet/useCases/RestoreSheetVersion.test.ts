@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RestoreSheetVersion } from './RestoreSheetVersion';
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
 import { RestoreSheetVersionInput } from '../dto/RestoreSheetVersionInput';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
-import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
+import { Sheet } from '~domain/sheet/model/Sheet';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 
 describe('RestoreSheetVersion', () => {
   let restoreSheetVersion: RestoreSheetVersion;

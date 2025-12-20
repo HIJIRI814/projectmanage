@@ -1,11 +1,11 @@
-import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
-import { CreateProject } from '../../../application/project/useCases/CreateProject';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { CreateProjectInput } from '../../../application/project/dto/CreateProjectInput';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
-import { UserType } from '../../../domain/user/model/UserType';
+import { ProjectRepositoryImpl } from '~infrastructure/project/projectRepositoryImpl';
+import { CreateProject } from '~application/project/useCases/CreateProject';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { CreateProjectInput } from '~application/project/dto/CreateProjectInput';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
+import { UserType } from '~domain/user/model/UserType';
 import { z } from 'zod';
 
 const projectRepository = new ProjectRepositoryImpl();

@@ -1,5 +1,5 @@
-import { ICompanyPartnershipRepository } from '../../domain/company/repository/ICompanyPartnershipRepository';
-import { CompanyPartnership } from '../../domain/company/model/CompanyPartnership';
+import { ICompanyPartnershipRepository } from '~domain/company/repository/ICompanyPartnershipRepository';
+import { CompanyPartnership } from '~domain/company/model/CompanyPartnership';
 import { prismaClient } from '../prisma/prismaClient';
 import { v4 as uuidv4 } from 'uuid';
 

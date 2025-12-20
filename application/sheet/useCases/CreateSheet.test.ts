@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateSheet } from './CreateSheet';
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
 import { CreateSheetInput } from '../dto/CreateSheetInput';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
+import { Sheet } from '~domain/sheet/model/Sheet';
 
 describe('CreateSheet', () => {
   let createSheet: CreateSheet;

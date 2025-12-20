@@ -1,4 +1,4 @@
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
 
 export class DeleteCompany {
   constructor(private companyRepository: ICompanyRepository) {}

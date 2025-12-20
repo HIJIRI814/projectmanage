@@ -1,5 +1,5 @@
-import { ISheetRepository } from '../../domain/sheet/model/ISheetRepository';
-import { Sheet } from '../../domain/sheet/model/Sheet';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { Sheet } from '~domain/sheet/model/Sheet';
 import { prismaClient } from '../prisma/prismaClient';
 
 export class SheetRepositoryImpl implements ISheetRepository {

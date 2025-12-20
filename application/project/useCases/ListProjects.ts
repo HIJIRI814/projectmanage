@@ -1,4 +1,4 @@
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
 import { ProjectOutput } from '../dto/ProjectOutput';
 
 export class ListProjects {

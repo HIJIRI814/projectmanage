@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateProject } from './CreateProject';
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
 import { CreateProjectInput } from '../dto/CreateProjectInput';
-import { Project } from '../../../domain/project/model/Project';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
+import { Project } from '~domain/project/model/Project';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
 
 describe('CreateProject', () => {
   let createProject: CreateProject;

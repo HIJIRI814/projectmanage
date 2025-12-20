@@ -1,5 +1,5 @@
-import { ISheetMarkerRepository } from '../../domain/sheet/model/ISheetMarkerRepository';
-import { SheetMarker } from '../../domain/sheet/model/SheetMarker';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
+import { SheetMarker } from '~domain/sheet/model/SheetMarker';
 import { prismaClient } from '../prisma/prismaClient';
 import { v4 as uuidv4 } from 'uuid';
 

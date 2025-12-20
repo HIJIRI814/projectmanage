@@ -1,7 +1,7 @@
-import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRepositoryImpl';
-import { GetCompany } from '../../../application/company/useCases/GetCompany';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
+import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
+import { GetCompany } from '~application/company/useCases/GetCompany';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
 import { isAdministratorInCompany } from '../../utils/auth';
 
 const companyRepository = new CompanyRepositoryImpl();

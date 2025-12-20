@@ -14,6 +14,9 @@ export default defineConfig({
     alias: {
       '~': resolve(fileURLToPath(new URL('.', import.meta.url))),
       '@': resolve(fileURLToPath(new URL('.', import.meta.url))),
+      '~domain': resolve(fileURLToPath(new URL('./domain', import.meta.url))),
+      '~application': resolve(fileURLToPath(new URL('./application', import.meta.url))),
+      '~infrastructure': resolve(fileURLToPath(new URL('./infrastructure', import.meta.url))),
     },
   },
 });

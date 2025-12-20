@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SheetVersionRepositoryImpl } from './sheetVersionRepositoryImpl';
-import { SheetVersion } from '../../domain/sheet/model/SheetVersion';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 import { prismaClient } from '../prisma/prismaClient';
 
 // Prismaクライアントをモック

@@ -1,6 +1,6 @@
-import { ICompanyInvitationRepository } from '../../domain/company/repository/ICompanyInvitationRepository';
-import { CompanyInvitation } from '../../domain/company/model/CompanyInvitation';
-import { InvitationStatus } from '../../domain/company/model/InvitationStatus';
+import { ICompanyInvitationRepository } from '~domain/company/repository/ICompanyInvitationRepository';
+import { CompanyInvitation } from '~domain/company/model/CompanyInvitation';
+import { InvitationStatus } from '~domain/company/model/InvitationStatus';
 import { prismaClient } from '../prisma/prismaClient';
 
 export class CompanyInvitationRepositoryImpl implements ICompanyInvitationRepository {

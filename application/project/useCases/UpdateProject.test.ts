@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UpdateProject } from './UpdateProject';
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
 import { UpdateProjectInput } from '../dto/UpdateProjectInput';
-import { Project } from '../../../domain/project/model/Project';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
+import { Project } from '~domain/project/model/Project';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
 
 describe('UpdateProject', () => {
   let updateProject: UpdateProject;

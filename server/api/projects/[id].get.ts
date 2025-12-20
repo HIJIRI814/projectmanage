@@ -1,12 +1,12 @@
-import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
-import { GetProject } from '../../../application/project/useCases/GetProject';
-import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
-import { ProjectOutput } from '../../../application/project/dto/ProjectOutput';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
-import { UserType } from '../../../domain/user/model/UserType';
+import { ProjectRepositoryImpl } from '~infrastructure/project/projectRepositoryImpl';
+import { GetProject } from '~application/project/useCases/GetProject';
+import { ProjectAccessService } from '~application/project/service/ProjectAccessService';
+import { ProjectOutput } from '~application/project/dto/ProjectOutput';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { prismaClient } from '~infrastructure/prisma/prismaClient';
+import { UserType } from '~domain/user/model/UserType';
 
 const projectRepository = new ProjectRepositoryImpl();
 const getProjectUseCase = new GetProject(projectRepository);

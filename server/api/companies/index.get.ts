@@ -1,8 +1,8 @@
-import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRepositoryImpl';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UserType } from '../../../domain/user/model/UserType';
+import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { UserType } from '~domain/user/model/UserType';
 
 const companyRepository = new CompanyRepositoryImpl();
 const userRepository = new UserRepositoryImpl();

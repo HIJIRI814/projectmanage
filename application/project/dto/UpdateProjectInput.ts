@@ -1,4 +1,4 @@
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
 
 export class UpdateProjectInput {
   constructor(

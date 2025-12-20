@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserRepositoryImpl } from './userRepositoryImpl';
-import { User } from '../../domain/user/model/User';
-import { Email } from '../../domain/user/model/Email';
-import { UserType } from '../../domain/user/model/UserType';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
+import { UserType } from '~domain/user/model/UserType';
 import { prismaClient } from '../prisma/prismaClient';
 
 // Prismaクライアントをモック

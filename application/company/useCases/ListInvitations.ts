@@ -1,4 +1,4 @@
-import { ICompanyInvitationRepository } from '../../../domain/company/repository/ICompanyInvitationRepository';
+import { ICompanyInvitationRepository } from '~domain/company/repository/ICompanyInvitationRepository';
 import { InvitationOutput } from '../dto/InvitationOutput';
 
 export class ListInvitations {

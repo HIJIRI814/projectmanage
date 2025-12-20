@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CreateSheetVersion } from './CreateSheetVersion';
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
-import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
-import { IImageBackupService } from '../../../domain/sheet/service/IImageBackupService';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
+import { IImageBackupService } from '~domain/sheet/service/IImageBackupService';
 import { CreateSheetVersionInput } from '../dto/CreateSheetVersionInput';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
-import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
+import { Sheet } from '~domain/sheet/model/Sheet';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 
 // uuidv4をモック
 vi.mock('uuid', () => ({

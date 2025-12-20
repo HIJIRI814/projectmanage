@@ -1,4 +1,4 @@
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
 import { SheetVersionOutput } from '../dto/SheetVersionOutput';
 
 export class ListSheetVersions {

@@ -1,6 +1,6 @@
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { JwtService } from '~infrastructure/auth/jwtService';
 
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();

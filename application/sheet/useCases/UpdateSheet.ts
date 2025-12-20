@@ -1,5 +1,5 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { Sheet } from '~domain/sheet/model/Sheet';
 import { UpdateSheetInput } from '../dto/UpdateSheetInput';
 import { SheetOutput } from '../dto/SheetOutput';
 

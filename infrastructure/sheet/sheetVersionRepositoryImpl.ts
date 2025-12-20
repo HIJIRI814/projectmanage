@@ -1,5 +1,5 @@
-import { ISheetVersionRepository } from '../../domain/sheet/model/ISheetVersionRepository';
-import { SheetVersion } from '../../domain/sheet/model/SheetVersion';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 import { prismaClient } from '../prisma/prismaClient';
 
 export class SheetVersionRepositoryImpl implements ISheetVersionRepository {

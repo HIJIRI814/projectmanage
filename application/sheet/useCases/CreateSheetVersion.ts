@@ -1,8 +1,8 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
-import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
-import { IImageBackupService } from '../../../domain/sheet/service/IImageBackupService';
-import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
+import { IImageBackupService } from '~domain/sheet/service/IImageBackupService';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 import { CreateSheetVersionInput } from '../dto/CreateSheetVersionInput';
 import { SheetVersionOutput } from '../dto/SheetVersionOutput';
 import { v4 as uuidv4 } from 'uuid';

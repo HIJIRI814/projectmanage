@@ -1,7 +1,7 @@
-import { Project } from '../../../domain/project/model/Project';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
-import { UserType } from '../../../domain/user/model/UserType';
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
+import { Project } from '~domain/project/model/Project';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
+import { UserType } from '~domain/user/model/UserType';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
 
 export class ProjectAccessService {
   constructor(private userCompanyRepository: IUserCompanyRepository) {}

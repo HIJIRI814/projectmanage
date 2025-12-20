@@ -1,6 +1,6 @@
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
-import { Project } from '../../../domain/project/model/Project';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
+import { Project } from '~domain/project/model/Project';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
 import { UpdateProjectInput } from '../dto/UpdateProjectInput';
 import { ProjectOutput } from '../dto/ProjectOutput';
 

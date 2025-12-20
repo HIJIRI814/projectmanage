@@ -1,5 +1,5 @@
-import { ICompanyInvitationRepository } from '../../../domain/company/repository/ICompanyInvitationRepository';
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
+import { ICompanyInvitationRepository } from '~domain/company/repository/ICompanyInvitationRepository';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
 import { InvitationOutput } from '../dto/InvitationOutput';
 
 export class GetInvitationByToken {

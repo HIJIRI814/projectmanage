@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ProjectRepositoryImpl } from './projectRepositoryImpl';
-import { Project } from '../../domain/project/model/Project';
+import { Project } from '~domain/project/model/Project';
 import { prismaClient } from '../prisma/prismaClient';
 
 // Prismaクライアントをモック

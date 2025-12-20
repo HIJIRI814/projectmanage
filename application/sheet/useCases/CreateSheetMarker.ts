@@ -1,6 +1,6 @@
-import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { SheetMarker } from '../../../domain/sheet/model/SheetMarker';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { SheetMarker } from '~domain/sheet/model/SheetMarker';
 import { CreateSheetMarkerInput } from '../dto/CreateSheetMarkerInput';
 import { SheetMarkerOutput } from '../dto/SheetMarkerOutput';
 import { v4 as uuidv4 } from 'uuid';

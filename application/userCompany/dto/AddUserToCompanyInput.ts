@@ -1,4 +1,4 @@
-import { UserType } from '../../../domain/user/model/UserType';
+import { UserType } from '~domain/user/model/UserType';
 
 export class AddUserToCompanyInput {
   constructor(

@@ -1,8 +1,8 @@
-import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRepositoryImpl';
-import { UpdateCompany } from '../../../application/company/useCases/UpdateCompany';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UpdateCompanyInput } from '../../../application/company/dto/UpdateCompanyInput';
+import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
+import { UpdateCompany } from '~application/company/useCases/UpdateCompany';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UpdateCompanyInput } from '~application/company/dto/UpdateCompanyInput';
 import { isAdministratorInCompany } from '../../utils/auth';
 import { z } from 'zod';
 

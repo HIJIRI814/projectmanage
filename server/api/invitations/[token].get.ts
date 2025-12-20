@@ -1,6 +1,6 @@
-import { CompanyInvitationRepositoryImpl } from '../../../infrastructure/company/companyInvitationRepositoryImpl';
-import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRepositoryImpl';
-import { GetInvitationByToken } from '../../../application/company/useCases/GetInvitationByToken';
+import { CompanyInvitationRepositoryImpl } from '~infrastructure/company/companyInvitationRepositoryImpl';
+import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
+import { GetInvitationByToken } from '~application/company/useCases/GetInvitationByToken';
 
 const invitationRepository = new CompanyInvitationRepositoryImpl();
 const companyRepository = new CompanyRepositoryImpl();

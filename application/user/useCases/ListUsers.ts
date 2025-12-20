@@ -1,7 +1,7 @@
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
 import { UserOutput } from '../dto/UserOutput';
-import { UserType } from '../../../domain/user/model/UserType';
+import { UserType } from '~domain/user/model/UserType';
 
 export class ListUsers {
   constructor(

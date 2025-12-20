@@ -1,4 +1,4 @@
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
 
 export class DeleteUser {
   constructor(private userRepository: IUserRepository) {}

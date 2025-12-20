@@ -1,6 +1,6 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
+import { Sheet } from '~domain/sheet/model/Sheet';
 import { RestoreSheetVersionInput } from '../dto/RestoreSheetVersionInput';
 import { SheetOutput } from '../dto/SheetOutput';
 

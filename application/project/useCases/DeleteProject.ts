@@ -1,4 +1,4 @@
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
 
 export class DeleteProject {
   constructor(private projectRepository: IProjectRepository) {}

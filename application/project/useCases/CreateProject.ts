@@ -1,6 +1,6 @@
-import { IProjectRepository } from '../../../domain/project/model/IProjectRepository';
-import { Project } from '../../../domain/project/model/Project';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
+import { Project } from '~domain/project/model/Project';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
 import { CreateProjectInput } from '../dto/CreateProjectInput';
 import { ProjectOutput } from '../dto/ProjectOutput';
 import { v4 as uuidv4 } from 'uuid';

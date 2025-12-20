@@ -1,5 +1,5 @@
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
-import { UserCompany } from '../../../domain/user/model/UserCompany';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
+import { UserCompany } from '~domain/user/model/UserCompany';
 import { AddUserToCompanyInput } from '../dto/AddUserToCompanyInput';
 import { UserCompanyOutput } from '../dto/UserCompanyOutput';
 import { v4 as uuidv4 } from 'uuid';

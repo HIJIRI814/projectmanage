@@ -1,5 +1,5 @@
-import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
-import { SheetMarker } from '../../../domain/sheet/model/SheetMarker';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
+import { SheetMarker } from '~domain/sheet/model/SheetMarker';
 import { UpdateSheetMarkerInput } from '../dto/UpdateSheetMarkerInput';
 import { SheetMarkerOutput } from '../dto/SheetMarkerOutput';
 

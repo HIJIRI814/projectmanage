@@ -1,5 +1,5 @@
-import { UserCompanyRepositoryImpl } from '../../infrastructure/user/userCompanyRepositoryImpl';
-import { UserType } from '../../domain/user/model/UserType';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { UserType } from '~domain/user/model/UserType';
 
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 

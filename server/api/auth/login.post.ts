@@ -1,9 +1,9 @@
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { LoginUser } from '../../../application/auth/useCases/LoginUser';
-import { LoginInput } from '../../../application/auth/dto/LoginInput';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { AuthDomainService } from '~domain/user/service/AuthDomainService';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { LoginUser } from '~application/auth/useCases/LoginUser';
+import { LoginInput } from '~application/auth/dto/LoginInput';
 import { z } from 'zod';
 
 const loginSchema = z.object({

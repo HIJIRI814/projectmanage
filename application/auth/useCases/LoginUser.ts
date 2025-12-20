@@ -1,8 +1,8 @@
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
-import { Email } from '../../../domain/user/model/Email';
-import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
+import { Email } from '~domain/user/model/Email';
+import { AuthDomainService } from '~domain/user/service/AuthDomainService';
+import { JwtService } from '~infrastructure/auth/jwtService';
 import { LoginInput } from '../dto/LoginInput';
 import { AuthResult } from '../dto/AuthResult';
 

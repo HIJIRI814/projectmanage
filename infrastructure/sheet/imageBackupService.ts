@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { IImageBackupService } from '../../domain/sheet/service/IImageBackupService';
+import { IImageBackupService } from '~domain/sheet/service/IImageBackupService';
 
 export class ImageBackupService implements IImageBackupService {
   async backupImage(sourceImageUrl: string | null): Promise<string | null> {

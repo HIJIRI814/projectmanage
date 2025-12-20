@@ -1,5 +1,5 @@
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
-import { Company } from '../../../domain/company/model/Company';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
+import { Company } from '~domain/company/model/Company';
 import { UpdateCompanyInput } from '../dto/UpdateCompanyInput';
 import { CompanyOutput } from '../dto/CompanyOutput';
 

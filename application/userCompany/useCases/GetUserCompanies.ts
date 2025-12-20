@@ -1,4 +1,4 @@
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
 import { UserCompanyOutput } from '../dto/UserCompanyOutput';
 
 export class GetUserCompanies {

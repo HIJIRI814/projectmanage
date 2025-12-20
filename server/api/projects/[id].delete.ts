@@ -1,11 +1,11 @@
-import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
-import { DeleteProject } from '../../../application/project/useCases/DeleteProject';
-import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UserType } from '../../../domain/user/model/UserType';
-import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
+import { ProjectRepositoryImpl } from '~infrastructure/project/projectRepositoryImpl';
+import { DeleteProject } from '~application/project/useCases/DeleteProject';
+import { ProjectAccessService } from '~application/project/service/ProjectAccessService';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { UserType } from '~domain/user/model/UserType';
+import { prismaClient } from '~infrastructure/prisma/prismaClient';
 
 const projectRepository = new ProjectRepositoryImpl();
 const deleteProjectUseCase = new DeleteProject(projectRepository);

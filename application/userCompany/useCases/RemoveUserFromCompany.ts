@@ -1,4 +1,4 @@
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
 
 export class RemoveUserFromCompany {
   constructor(private userCompanyRepository: IUserCompanyRepository) {}

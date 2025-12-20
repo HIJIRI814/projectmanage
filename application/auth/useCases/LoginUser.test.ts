@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LoginUser } from './LoginUser';
 import { LoginInput } from '../dto/LoginInput';
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
-import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { User } from '../../../domain/user/model/User';
-import { Email } from '../../../domain/user/model/Email';
-import { UserCompany } from '../../../domain/user/model/UserCompany';
-import { UserType } from '../../../domain/user/model/UserType';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
+import { AuthDomainService } from '~domain/user/service/AuthDomainService';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
+import { UserCompany } from '~domain/user/model/UserCompany';
+import { UserType } from '~domain/user/model/UserType';
 
 describe('LoginUser', () => {
   let loginUser: LoginUser;

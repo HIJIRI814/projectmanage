@@ -1,4 +1,4 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
 import { SheetOutput } from '../dto/SheetOutput';
 
 export class ListSheets {

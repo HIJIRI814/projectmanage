@@ -1,6 +1,6 @@
-import { IUserRepository } from '../../domain/user/model/IUserRepository';
-import { User } from '../../domain/user/model/User';
-import { Email } from '../../domain/user/model/Email';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
 import { prismaClient } from '../prisma/prismaClient';
 
 export class UserRepositoryImpl implements IUserRepository {

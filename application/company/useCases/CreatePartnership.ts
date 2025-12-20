@@ -1,5 +1,5 @@
-import { ICompanyPartnershipRepository } from '../../../domain/company/repository/ICompanyPartnershipRepository';
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
+import { ICompanyPartnershipRepository } from '~domain/company/repository/ICompanyPartnershipRepository';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
 import { CreatePartnershipInput } from '../dto/CreatePartnershipInput';
 import { PartnershipOutput } from '../dto/PartnershipOutput';
 import { v4 as uuidv4 } from 'uuid';

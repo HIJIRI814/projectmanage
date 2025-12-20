@@ -1,8 +1,8 @@
-import { ICompanyInvitationRepository } from '../../../domain/company/repository/ICompanyInvitationRepository';
-import { IUserCompanyRepository } from '../../../domain/user/repository/IUserCompanyRepository';
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { Email } from '../../../domain/user/model/Email';
-import { UserCompany } from '../../../domain/user/model/UserCompany';
+import { ICompanyInvitationRepository } from '~domain/company/repository/ICompanyInvitationRepository';
+import { IUserCompanyRepository } from '~domain/user/repository/IUserCompanyRepository';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { Email } from '~domain/user/model/Email';
+import { UserCompany } from '~domain/user/model/UserCompany';
 import { AcceptInvitationInput } from '../dto/AcceptInvitationInput';
 import { v4 as uuidv4 } from 'uuid';
 

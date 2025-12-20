@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SheetRepositoryImpl } from './sheetRepositoryImpl';
-import { Sheet } from '../../domain/sheet/model/Sheet';
+import { Sheet } from '~domain/sheet/model/Sheet';
 import { prismaClient } from '../prisma/prismaClient';
 
 describe('SheetRepositoryImpl', () => {

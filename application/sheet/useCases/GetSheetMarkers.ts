@@ -1,4 +1,4 @@
-import { ISheetMarkerRepository } from '../../../domain/sheet/model/ISheetMarkerRepository';
+import { ISheetMarkerRepository } from '~domain/sheet/model/ISheetMarkerRepository';
 import { SheetMarkerOutput } from '../dto/SheetMarkerOutput';
 
 export class GetSheetMarkers {

@@ -1,6 +1,6 @@
-import { IUserRepository } from '../../../domain/user/model/IUserRepository';
-import { User } from '../../../domain/user/model/User';
-import { Email } from '../../../domain/user/model/Email';
+import { IUserRepository } from '~domain/user/model/IUserRepository';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
 import { CreateUserInput } from '../dto/CreateUserInput';
 import { UserOutput } from '../dto/UserOutput';
 import { v4 as uuidv4 } from 'uuid';

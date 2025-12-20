@@ -1,13 +1,13 @@
-import { ProjectRepositoryImpl } from '../../../infrastructure/project/projectRepositoryImpl';
-import { UpdateProject } from '../../../application/project/useCases/UpdateProject';
-import { ProjectAccessService } from '../../../application/project/service/ProjectAccessService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { UpdateProjectInput } from '../../../application/project/dto/UpdateProjectInput';
-import { ProjectVisibility } from '../../../domain/project/model/ProjectVisibility';
-import { UserType } from '../../../domain/user/model/UserType';
-import { prismaClient } from '../../../infrastructure/prisma/prismaClient';
+import { ProjectRepositoryImpl } from '~infrastructure/project/projectRepositoryImpl';
+import { UpdateProject } from '~application/project/useCases/UpdateProject';
+import { ProjectAccessService } from '~application/project/service/ProjectAccessService';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { UpdateProjectInput } from '~application/project/dto/UpdateProjectInput';
+import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
+import { UserType } from '~domain/user/model/UserType';
+import { prismaClient } from '~infrastructure/prisma/prismaClient';
 import { z } from 'zod';
 
 const projectRepository = new ProjectRepositoryImpl();

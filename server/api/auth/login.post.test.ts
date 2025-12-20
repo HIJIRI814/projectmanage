@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LoginInput } from '../../../application/auth/dto/LoginInput';
-import { AuthResult } from '../../../application/auth/dto/AuthResult';
+import { LoginInput } from '~application/auth/dto/LoginInput';
+import { AuthResult } from '~application/auth/dto/AuthResult';
 
 // モジュール全体をモック
 const mockExecute = vi.fn();

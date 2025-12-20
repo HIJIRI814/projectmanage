@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SignUpInput } from '../../../application/auth/dto/SignUpInput';
-import { UserOutput } from '../../../application/user/dto/UserOutput';
-import { AuthResult } from '../../../application/auth/dto/AuthResult';
+import { SignUpInput } from '~application/auth/dto/SignUpInput';
+import { UserOutput } from '~application/user/dto/UserOutput';
+import { AuthResult } from '~application/auth/dto/AuthResult';
 
 // モジュール全体をモック
 const mockSignUpExecute = vi.fn();

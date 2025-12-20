@@ -1,5 +1,5 @@
-import { ICompanyPartnershipRepository } from '../../../domain/company/repository/ICompanyPartnershipRepository';
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
+import { ICompanyPartnershipRepository } from '~domain/company/repository/ICompanyPartnershipRepository';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
 import { PartnershipOutput } from '../dto/PartnershipOutput';
 
 export class ListPartnerships {

@@ -1,4 +1,4 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
 
 export class DeleteSheet {
   constructor(private sheetRepository: ISheetRepository) {}

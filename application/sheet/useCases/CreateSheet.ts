@@ -1,5 +1,5 @@
-import { ISheetRepository } from '../../../domain/sheet/model/ISheetRepository';
-import { Sheet } from '../../../domain/sheet/model/Sheet';
+import { ISheetRepository } from '~domain/sheet/model/ISheetRepository';
+import { Sheet } from '~domain/sheet/model/Sheet';
 import { CreateSheetInput } from '../dto/CreateSheetInput';
 import { SheetOutput } from '../dto/SheetOutput';
 import { v4 as uuidv4 } from 'uuid';

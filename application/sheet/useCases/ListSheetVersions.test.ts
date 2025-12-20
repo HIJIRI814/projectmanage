@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ListSheetVersions } from './ListSheetVersions';
-import { ISheetVersionRepository } from '../../../domain/sheet/model/ISheetVersionRepository';
-import { SheetVersion } from '../../../domain/sheet/model/SheetVersion';
+import { ISheetVersionRepository } from '~domain/sheet/model/ISheetVersionRepository';
+import { SheetVersion } from '~domain/sheet/model/SheetVersion';
 
 describe('ListSheetVersions', () => {
   let listSheetVersions: ListSheetVersions;

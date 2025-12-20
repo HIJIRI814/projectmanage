@@ -1,12 +1,12 @@
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { SignUp } from '../../../application/auth/useCases/SignUp';
-import { CreateUser } from '../../../application/user/useCases/CreateUser';
-import { SignUpInput } from '../../../application/auth/dto/SignUpInput';
-import { LoginUser } from '../../../application/auth/useCases/LoginUser';
-import { LoginInput } from '../../../application/auth/dto/LoginInput';
-import { AuthDomainService } from '../../../domain/user/service/AuthDomainService';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { SignUp } from '~application/auth/useCases/SignUp';
+import { CreateUser } from '~application/user/useCases/CreateUser';
+import { SignUpInput } from '~application/auth/dto/SignUpInput';
+import { LoginUser } from '~application/auth/useCases/LoginUser';
+import { LoginInput } from '~application/auth/dto/LoginInput';
+import { AuthDomainService } from '~domain/user/service/AuthDomainService';
+import { JwtService } from '~infrastructure/auth/jwtService';
 import { z } from 'zod';
 
 const userRepository = new UserRepositoryImpl();

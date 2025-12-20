@@ -1,5 +1,5 @@
-import { ICompanyRepository } from '../../../domain/company/repository/ICompanyRepository';
-import { Company } from '../../../domain/company/model/Company';
+import { ICompanyRepository } from '~domain/company/repository/ICompanyRepository';
+import { Company } from '~domain/company/model/Company';
 import { CreateCompanyInput } from '../dto/CreateCompanyInput';
 import { CompanyOutput } from '../dto/CompanyOutput';
 import { v4 as uuidv4 } from 'uuid';

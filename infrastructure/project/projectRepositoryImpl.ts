@@ -1,5 +1,5 @@
-import { IProjectRepository } from '../../domain/project/model/IProjectRepository';
-import { Project } from '../../domain/project/model/Project';
+import { IProjectRepository } from '~domain/project/model/IProjectRepository';
+import { Project } from '~domain/project/model/Project';
 import { prismaClient } from '../prisma/prismaClient';
 
 export class ProjectRepositoryImpl implements IProjectRepository {

@@ -1,10 +1,10 @@
-import { CompanyRepositoryImpl } from '../../../infrastructure/company/companyRepositoryImpl';
-import { CreateCompany } from '../../../application/company/useCases/CreateCompany';
-import { JwtService } from '../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../infrastructure/auth/userRepositoryImpl';
-import { UserCompanyRepositoryImpl } from '../../../infrastructure/user/userCompanyRepositoryImpl';
-import { CreateCompanyInput } from '../../../application/company/dto/CreateCompanyInput';
-import { UserType } from '../../../domain/user/model/UserType';
+import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
+import { CreateCompany } from '~application/company/useCases/CreateCompany';
+import { JwtService } from '~infrastructure/auth/jwtService';
+import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
+import { CreateCompanyInput } from '~application/company/dto/CreateCompanyInput';
+import { UserType } from '~domain/user/model/UserType';
 import { z } from 'zod';
 
 const companyRepository = new CompanyRepositoryImpl();
