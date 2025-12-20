@@ -6,3 +6,4 @@ export interface ICompanyPartnershipRepository {
   exists(companyId1: string, companyId2: string): Promise<boolean>;
 }
 
+
