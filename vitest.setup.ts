@@ -52,6 +52,15 @@ globalThis.definePageMeta = vi.fn();
 globalThis.useCookie = vi.fn((name: string, options?: any) => {
   return ref<string | null>(null);
 });
+globalThis.useRuntimeConfig = vi.fn(() => ({
+  supabaseUrl: process.env.SUPABASE_URL || 'https://test.supabase.co',
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
+  public: {
+    supabaseUrl: process.env.SUPABASE_URL || 'https://test.supabase.co',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || 'test-anon-key',
+  },
+}));
+globalThis.getRouterParam = vi.fn();
 
 // useAuthをモック（テストファイルで上書き可能）
 globalThis.useAuth = vi.fn(() => ({

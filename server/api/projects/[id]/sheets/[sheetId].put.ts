@@ -1,17 +1,14 @@
 import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl';
 import { UpdateSheet } from '~/application/sheet/useCases/UpdateSheet';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { UpdateSheetInput } from '~/application/sheet/dto/UpdateSheetInput';
 import { UserType } from '~/domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const sheetRepository = new SheetRepositoryImpl();
 const updateSheetUseCase = new UpdateSheet(sheetRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const jwtService = new JwtService();
 
 const updateSheetSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -19,38 +16,6 @@ const updateSheetSchema = z.object({
   content: z.string().optional(),
   imageUrl: z.string().url().optional(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
@@ -93,7 +58,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

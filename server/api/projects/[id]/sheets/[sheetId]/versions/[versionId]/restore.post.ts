@@ -1,50 +1,15 @@
 import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl';
 import { SheetVersionRepositoryImpl } from '~/infrastructure/sheet/sheetVersionRepositoryImpl';
 import { RestoreSheetVersion } from '~/application/sheet/useCases/RestoreSheetVersion';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { RestoreSheetVersionInput } from '~/application/sheet/dto/RestoreSheetVersionInput';
 import { UserType } from '~/domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const sheetRepository = new SheetRepositoryImpl();
 const sheetVersionRepository = new SheetVersionRepositoryImpl();
 const restoreSheetVersionUseCase = new RestoreSheetVersion(sheetRepository, sheetVersionRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const jwtService = new JwtService();
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);

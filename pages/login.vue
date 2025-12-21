@@ -65,48 +65,24 @@ import Button from '~/components/atoms/Button.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { setTokens, setUser } = useAuth()
+const { login, isLoading, error } = useAuth()
 
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const error = ref<string | null>(null)
 
 const handleLogin = async () => {
-  isLoading.value = true
-  error.value = null
   try {
-    const { apiFetch } = useApi()
-    const result = await apiFetch<{
-      accessToken: string
-      refreshToken: string
-      user: any
-    }>('/api/auth/login', {
-      method: 'POST',
-      body: { email: email.value, password: password.value },
-    })
+    await login(email.value, password.value)
 
-    setTokens(result.accessToken, result.refreshToken)
-    setUser(result.user)
-
-    // クッキーにトークンを保存
-    const accessTokenCookie = useCookie('accessToken', {
-      maxAge: 60 * 15,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      httpOnly: false,
-    })
-    accessTokenCookie.value = result.accessToken
-
+    // ログイン成功後、リダイレクト
     const redirect = route.query.redirect as string | undefined
     await router.push(redirect || '/projects')
   } catch (err: any) {
+    // エラーメッセージはストアで管理されるため、ここでは何もしない
     // エラーハンドリング（401エラーでリダイレクトされた場合はエラーメッセージを表示しない）
-    if (err.statusCode !== 401 && err.status !== 401) {
-      error.value = err.message || 'ログインに失敗しました'
+    if (err.statusCode === 401 || err.status === 401) {
+      // 401エラーの場合は何もしない（ミドルウェアでリダイレクトされる）
     }
-  } finally {
-    isLoading.value = false
   }
 }
 </script>

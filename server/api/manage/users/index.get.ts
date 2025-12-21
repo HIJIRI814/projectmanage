@@ -1,13 +1,12 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { ListUsers } from '../../../../application/user/useCases/ListUsers';
-import { JwtService } from '../../../../infrastructure/auth/jwtService';
 import { UserType } from '../../../../domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 const listUsersUseCase = new ListUsers(userRepository, userCompanyRepository);
-const jwtService = new JwtService();
 
 async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
@@ -20,45 +19,16 @@ async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
   );
 }
 
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
+async function checkAdministratorAccess(event: any) {
+  const user = await getCurrentUser(event);
+  const isAdministrator = await isAdministratorInAnyCompany(user.id);
+  if (!isAdministrator) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required',
     });
   }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    // UserCompanyから管理者かチェック
-    const isAdministrator = await isAdministratorInAnyCompany(userId);
-    if (!isAdministrator) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden: Administrator access required',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
+  return user;
 }
 
 export default defineEventHandler(async (event) => {
@@ -67,7 +37,7 @@ export default defineEventHandler(async (event) => {
   // #endregion
   // 管理者権限チェック
   try {
-    const currentUser = await getCurrentUser(event);
+    const currentUser = await checkAdministratorAccess(event);
     // #region agent log
     fetch('http://127.0.0.1:7244/ingest/5bb52b61-727f-4e41-8e72-bb69d23dc924',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/api/manage/users/index.get.ts:47',message:'Admin check passed',data:{userId:currentUser.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion

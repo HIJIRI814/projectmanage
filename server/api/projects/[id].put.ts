@@ -1,21 +1,17 @@
 import { ProjectRepositoryImpl } from '~infrastructure/project/projectRepositoryImpl';
 import { UpdateProject } from '~application/project/useCases/UpdateProject';
 import { ProjectAccessService } from '~application/project/service/ProjectAccessService';
-import { JwtService } from '~infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
 import { UpdateProjectInput } from '~application/project/dto/UpdateProjectInput';
 import { ProjectVisibility } from '~domain/project/model/ProjectVisibility';
-import { UserType } from '~domain/user/model/UserType';
 import { prismaClient } from '~infrastructure/prisma/prismaClient';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const projectRepository = new ProjectRepositoryImpl();
 const updateProjectUseCase = new UpdateProject(projectRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 const projectAccessService = new ProjectAccessService(userCompanyRepository);
-const jwtService = new JwtService();
 
 const updateProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
@@ -24,38 +20,6 @@ const updateProjectSchema = z.object({
   companyIds: z.array(z.string()).optional(),
   clientCompanyIds: z.array(z.string()).optional(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
   const projectMember = await prismaClient.projectMember.findUnique({
@@ -107,7 +71,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

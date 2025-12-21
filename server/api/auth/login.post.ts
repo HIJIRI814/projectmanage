@@ -1,9 +1,8 @@
+import { createServerSupabaseClient } from '~/server/utils/supabase';
 import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
-import { AuthDomainService } from '~domain/user/service/AuthDomainService';
-import { JwtService } from '~infrastructure/auth/jwtService';
-import { LoginUser } from '~application/auth/useCases/LoginUser';
-import { LoginInput } from '~application/auth/dto/LoginInput';
+import { User } from '~domain/user/model/User';
+import { Email } from '~domain/user/model/Email';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -11,17 +10,8 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-// シングルトンインスタンス
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const authDomainService = new AuthDomainService();
-const jwtService = new JwtService();
-const loginUserUseCase = new LoginUser(
-  userRepository,
-  userCompanyRepository,
-  authDomainService,
-  jwtService
-);
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -39,35 +29,93 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // DTOの作成
-    const input = new LoginInput(validationResult.data.email, validationResult.data.password);
-
-    // ユースケースの実行
-    const result = await loginUserUseCase.execute(input);
-
-    // サーバー側でクッキーを設定
-    setCookie(event, 'accessToken', result.accessToken, {
-      maxAge: 60 * 15, // 15分
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      httpOnly: false, // クライアント側からアクセス可能にする
+    // Supabaseクライアントの作成
+    const supabase = createServerSupabaseClient(event);
+    
+    // Supabaseでログイン
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: validationResult.data.email,
+      password: validationResult.data.password,
     });
 
-    return {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      user: result.user,
-    };
-  } catch (error: any) {
-    console.error('Login error:', error);
-    
-    if (error.message === 'Invalid credentials') {
+    if (authError) {
+      console.error('Supabase auth error:', authError);
+      throw createError({
+        statusCode: 401,
+        statusMessage: authError.message || 'Invalid credentials',
+      });
+    }
+
+    if (!authData.session) {
+      console.error('No session returned from Supabase');
       throw createError({
         statusCode: 401,
         statusMessage: 'Invalid credentials',
       });
     }
 
+    // セッショントークンをクッキーに保存
+    const isProduction = process.env.NODE_ENV === 'production';
+    setCookie(event, 'sb-access-token', authData.session.access_token, {
+      maxAge: 60 * 60, // 1時間
+      secure: isProduction, // 本番環境のみHTTPS
+      sameSite: 'lax',
+      httpOnly: true,
+      path: '/',
+    });
+
+    setCookie(event, 'sb-refresh-token', authData.session.refresh_token, {
+      maxAge: 60 * 60 * 24 * 7, // 7日
+      secure: isProduction,
+      sameSite: 'lax',
+      httpOnly: true,
+      path: '/',
+    });
+
+    // ユーザー情報を取得
+    const userId = authData.user.id;
+    let user = await userRepository.findById(userId);
+    
+    // ユーザーが存在しない場合、Supabaseのユーザー情報から作成
+    if (!user) {
+      console.log(`User ${userId} not found in database, creating from Supabase user data`);
+      const supabaseUser = authData.user;
+      const userMetadata = supabaseUser.user_metadata || {};
+      const email = new Email(supabaseUser.email || validationResult.data.email);
+      
+      // ダミーのパスワードハッシュ（実際の認証はSupabaseで行われる）
+      const dummyPasswordHash = '$2a$10$dummy.hash.for.supabase.user.that.will.never.be.used';
+      user = User.reconstruct(
+        userId,
+        email.toString(),
+        dummyPasswordHash,
+        userMetadata.name || supabaseUser.email?.split('@')[0] || 'User',
+        new Date(supabaseUser.created_at || Date.now()),
+        new Date()
+      );
+      await userRepository.save(user);
+    }
+
+    // UserCompanyからuserTypeを取得（最初の会社のuserTypeを使用）
+    const userCompanies = await userCompanyRepository.findByUserId(userId);
+    const userType = userCompanies.length > 0 ? userCompanies[0].userType.toNumber() : null;
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email.toString(),
+        name: user.name,
+        userType,
+        userCompanies: userCompanies.map((uc) => ({
+          id: uc.id,
+          companyId: uc.companyId,
+          userType: uc.userType.toNumber(),
+        })),
+      },
+    };
+  } catch (error: any) {
+    console.error('Login error:', error);
+    
     if (error.statusCode) {
       throw error;
     }

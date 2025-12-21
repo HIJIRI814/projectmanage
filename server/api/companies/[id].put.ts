@@ -1,51 +1,16 @@
 import { CompanyRepositoryImpl } from '~infrastructure/company/companyRepositoryImpl';
 import { UpdateCompany } from '~application/company/useCases/UpdateCompany';
-import { JwtService } from '~infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
 import { UpdateCompanyInput } from '~application/company/dto/UpdateCompanyInput';
 import { isAdministratorInCompany } from '../../utils/auth';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const companyRepository = new CompanyRepositoryImpl();
 const updateCompanyUseCase = new UpdateCompany(companyRepository);
-const userRepository = new UserRepositoryImpl();
-const jwtService = new JwtService();
 
 const updateCompanySchema = z.object({
   name: z.string().min(1, 'Name is required'),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
@@ -75,7 +40,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

@@ -1,46 +1,39 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
+import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { DeleteUser } from '../../../../application/user/useCases/DeleteUser';
-import { JwtService } from '../../../../infrastructure/auth/jwtService';
+import { UserType } from '../../../../domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const userRepository = new UserRepositoryImpl();
+const userCompanyRepository = new UserCompanyRepositoryImpl();
 const deleteUserUseCase = new DeleteUser(userRepository);
-const jwtService = new JwtService();
 
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
+async function isAdministratorInAnyCompany(userId: string): Promise<boolean> {
+  const userCompanies = await userCompanyRepository.findByUserId(userId);
+  if (userCompanies.length === 0) {
+    return false;
+  }
+  // いずれかの会社でADMINISTRATORであるかをチェック
+  return userCompanies.some(
+    (uc) => uc.userType.toNumber() === UserType.ADMINISTRATOR
+  );
+}
+
+async function checkAdministratorAccess(event: any) {
+  const user = await getCurrentUser(event);
+  const isAdministrator = await isAdministratorInAnyCompany(user.id);
+  if (!isAdministrator) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required',
     });
   }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user || !user.isAdministrator()) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden: Administrator access required',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
+  return user;
 }
 
 export default defineEventHandler(async (event) => {
   // 管理者権限チェック
-  const currentUser = await getCurrentUser(event);
+  const currentUser = await checkAdministratorAccess(event);
 
   const id = getRouterParam(event, 'id');
   if (!id) {

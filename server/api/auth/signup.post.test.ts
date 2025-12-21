@@ -1,24 +1,31 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SignUpInput } from '~application/auth/dto/SignUpInput';
-import { UserOutput } from '~application/user/dto/UserOutput';
-import { AuthResult } from '~application/auth/dto/AuthResult';
 
-// モジュール全体をモック
+// Supabaseクライアントをモック
+const mockCreateUser = vi.fn();
+const mockSignInWithPassword = vi.fn();
+const mockSupabaseClient = {
+  auth: {
+    admin: {
+      createUser: mockCreateUser,
+    },
+    signInWithPassword: mockSignInWithPassword,
+  },
+};
+
 const mockSignUpExecute = vi.fn();
-const mockLoginExecute = vi.fn();
-const mockSetCookie = vi.fn();
+const mockFindById = vi.fn();
+const mockFindByEmail = vi.fn();
+const mockSave = vi.fn();
+const mockFindByUserId = vi.fn();
+
+vi.mock('~/server/utils/supabase', () => ({
+  createServerSupabaseClient: vi.fn(() => mockSupabaseClient),
+}));
 
 vi.mock('../../../application/auth/useCases/SignUp', () => ({
   SignUp: class {
     constructor(...args: any[]) {}
     execute = mockSignUpExecute;
-  },
-}));
-
-vi.mock('../../../application/auth/useCases/LoginUser', () => ({
-  LoginUser: class {
-    constructor(...args: any[]) {}
-    execute = mockLoginExecute;
   },
 }));
 
@@ -31,36 +38,22 @@ vi.mock('../../../application/user/useCases/CreateUser', () => ({
 vi.mock('../../../infrastructure/auth/userRepositoryImpl', () => ({
   UserRepositoryImpl: class {
     constructor() {}
+    findById = mockFindById;
+    findByEmail = mockFindByEmail;
+    save = mockSave;
   },
 }));
 
 vi.mock('../../../infrastructure/user/userCompanyRepositoryImpl', () => ({
   UserCompanyRepositoryImpl: class {
     constructor() {}
+    findByUserId = mockFindByUserId;
   },
 }));
-
-vi.mock('../../../domain/user/service/AuthDomainService', () => ({
-  AuthDomainService: class {
-    constructor() {}
-  },
-}));
-
-vi.mock('../../../infrastructure/auth/jwtService', () => ({
-  JwtService: class {
-    constructor() {}
-  },
-}));
-
-// setCookieをグローバルにモック
-globalThis.setCookie = mockSetCookie;
 
 // Nuxtの関数をモック
 const mockReadBody = globalThis.readBody as any;
 const mockCreateError = globalThis.createError as any;
-
-// setCookieをグローバルにモック
-globalThis.setCookie = mockSetCookie;
 
 describe('POST /api/auth/signup', () => {
   let handler: any;
@@ -71,14 +64,15 @@ describe('POST /api/auth/signup', () => {
     name: 'Test User',
   };
 
-  const accessToken = 'test-access-token';
-  const refreshToken = 'test-refresh-token';
-
   beforeEach(async () => {
     vi.clearAllMocks();
+    mockCreateUser.mockClear();
+    mockSignInWithPassword.mockClear();
     mockSignUpExecute.mockClear();
-    mockLoginExecute.mockClear();
-    mockSetCookie.mockClear();
+    mockFindById.mockClear();
+    mockFindByEmail.mockClear();
+    mockSave.mockClear();
+    mockFindByUserId.mockClear();
 
     // ハンドラーを動的にインポート
     const module = await import('./signup.post');
@@ -93,21 +87,58 @@ describe('POST /api/auth/signup', () => {
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockSignUpExecute.mockResolvedValue(new UserOutput(user.id, user.email, user.name));
-    mockLoginExecute.mockResolvedValue(
-      new AuthResult(accessToken, refreshToken, user)
-    );
+    mockCreateUser.mockResolvedValue({
+      data: {
+        user: { id: user.id, email: user.email },
+      },
+      error: null,
+    });
+    mockSignInWithPassword.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'test-access-token',
+          refresh_token: 'test-refresh-token',
+        },
+      },
+      error: null,
+    });
+    mockFindByEmail.mockResolvedValue(null); // ユーザーが存在しない
+    mockSave.mockResolvedValue({
+      id: user.id,
+      email: { toString: () => user.email },
+      name: user.name,
+    });
+    mockFindById.mockResolvedValue({
+      id: user.id,
+      email: { toString: () => user.email },
+      name: user.name,
+    });
+    mockFindByUserId.mockResolvedValue([]);
 
     const event = {} as any;
     const result = await handler(event);
 
     expect(result).toEqual({
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        userType: null,
+        userCompanies: [],
+      },
     });
-    expect(mockSignUpExecute).toHaveBeenCalledWith(expect.any(SignUpInput));
-    expect(mockLoginExecute).toHaveBeenCalled();
-    // setCookieはh3の関数なので、eventオブジェクトが渡される
-    expect(mockSetCookie).toHaveBeenCalled();
+    expect(mockCreateUser).toHaveBeenCalledWith({
+      email: body.email,
+      password: body.password,
+      email_confirm: true,
+      user_metadata: {
+        name: body.name,
+      },
+    });
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: body.email,
+      password: body.password,
+    });
   });
 
   it('should return 400 for validation errors - invalid email', async () => {
@@ -178,7 +209,10 @@ describe('POST /api/auth/signup', () => {
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockSignUpExecute.mockRejectedValue(new Error('Email already exists'));
+    mockCreateUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'User already registered' },
+    });
 
     const event = {} as any;
 
@@ -199,7 +233,13 @@ describe('POST /api/auth/signup', () => {
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockSignUpExecute.mockRejectedValue(new Error('Database error'));
+    mockCreateUser.mockResolvedValue({
+      data: {
+        user: { id: 'test-user-id', email: 'test@example.com' },
+      },
+      error: null,
+    });
+    mockFindByEmail.mockRejectedValue(new Error('Database error'));
 
     const event = {} as any;
 
@@ -208,7 +248,7 @@ describe('POST /api/auth/signup', () => {
       expect.fail('Should have thrown an error');
     } catch (error: any) {
       expect(error.statusCode).toBe(500);
-      expect(error.statusMessage).toBe('Internal server error');
+      expect(error.statusMessage).toContain('Internal server error');
     }
   });
 });

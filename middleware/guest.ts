@@ -19,28 +19,23 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const redirectPath = validateRedirectPath(redirectParam);
 
   if (process.server) {
-    // SSR時はクッキーからトークンをチェック
-    const accessTokenCookie = useCookie('accessToken');
+    // SSR時はクッキーからSupabaseトークンをチェック
+    const sbAccessTokenCookie = useCookie('sb-access-token');
     
-    if (accessTokenCookie.value) {
+    if (sbAccessTokenCookie.value) {
       // 既にログイン済みの場合はredirectパラメータがあればそのページに、なければプロジェクト一覧へリダイレクト
       return navigateTo(redirectPath || '/projects');
     }
   } else {
     // クライアントサイドではストアの状態をチェック
     const store = useAuthStore();
-    const { isAuthenticated, user, accessToken } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
-    // クッキーからトークンを取得してストアに設定（クライアント側の状態を復元）
-    const accessTokenCookie = useCookie('accessToken');
-    
-    if (accessTokenCookie.value && !accessToken.value) {
-      // クッキーにトークンがあるがストアにない場合、ストアに設定
-      store.setTokens(accessTokenCookie.value, null);
-    }
+    // クッキーからSupabaseトークンをチェック
+    const sbAccessTokenCookie = useCookie('sb-access-token');
 
     // トークンはあるがユーザー情報がない場合、APIから取得してストアに設定
-    if (accessTokenCookie.value && !user.value) {
+    if (sbAccessTokenCookie.value && !user.value) {
       try {
         const userData = await $fetch('/api/auth/me');
         store.setUser(userData);

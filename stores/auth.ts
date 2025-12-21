@@ -21,7 +21,7 @@ export const useAuthStore = defineStore('auth', {
     error: null as string | null,
   }),
   getters: {
-    isAuthenticated: (state) => state.user !== null && state.accessToken !== null,
+    isAuthenticated: (state) => state.user !== null,
   },
   actions: {
     async login(email: string, password: string) {
@@ -29,8 +29,6 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       try {
         const result = await $fetch<{
-          accessToken: string;
-          refreshToken: string;
           user: User;
         }>('/api/auth/login', {
           method: 'POST',
@@ -38,24 +36,8 @@ export const useAuthStore = defineStore('auth', {
         });
 
         this.user = result.user;
-        this.accessToken = result.accessToken;
-        this.refreshToken = result.refreshToken;
-
-        // クッキーにトークンを保存（SSR時の認証チェック用）
-        const accessTokenCookie = useCookie('accessToken', {
-          maxAge: 60 * 15, // 15分
-          secure: process.env.NODE_ENV === 'production', // 本番環境のみsecure
-          sameSite: 'lax', // 開発環境でも動作するようにlaxに変更
-          httpOnly: false, // クライアント側からアクセス可能にする
-        });
-        accessTokenCookie.value = result.accessToken;
-        
-        // クライアント側でも確実にクッキーを設定（フォールバック）
-        if (process.client) {
-          const maxAge = 60 * 15; // 15分
-          const expires = new Date(Date.now() + maxAge * 1000).toUTCString();
-          document.cookie = `accessToken=${result.accessToken}; expires=${expires}; path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
-        }
+        // クッキーはサーバー側で設定されるため、クライアント側では不要
+        // SupabaseセッションはhttpOnlyクッキーで管理される
       } catch (err: any) {
         let errorMessage = 'ログインに失敗しました';
         if (err.data?.statusMessage) {
@@ -80,8 +62,10 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
 
       // クッキーからトークンを削除
-      const accessTokenCookie = useCookie('accessToken');
+      const accessTokenCookie = useCookie('sb-access-token');
       accessTokenCookie.value = null;
+      const refreshTokenCookie = useCookie('sb-refresh-token');
+      refreshTokenCookie.value = null;
     },
     setUser(user: User | null) {
       this.user = user;

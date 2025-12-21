@@ -1,15 +1,14 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { UpdateUser } from '../../../../application/user/useCases/UpdateUser';
-import { JwtService } from '../../../../infrastructure/auth/jwtService';
 import { UpdateUserInput } from '../../../../application/user/dto/UpdateUserInput';
 import { UserType } from '../../../../domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 const updateUserUseCase = new UpdateUser(userRepository);
-const jwtService = new JwtService();
 
 const updateUserSchema = z.object({
   email: z.string().email('Invalid email format').optional(),
@@ -26,50 +25,21 @@ async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   return userCompanies[0].userType.toNumber();
 }
 
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
+async function checkAdministratorAccess(event: any) {
+  const user = await getCurrentUser(event);
+  const userType = await getUserTypeInAnyCompany(user.id);
+  if (!userType || userType !== UserType.ADMINISTRATOR) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required',
     });
   }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    // UserCompanyからuserTypeを取得して管理者かチェック
-    const userType = await getUserTypeInAnyCompany(userId);
-    if (!userType || userType !== UserType.ADMINISTRATOR) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden: Administrator access required',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
+  return user;
 }
 
 export default defineEventHandler(async (event) => {
   // 管理者権限チェック
-  const currentUser = await getCurrentUser(event);
+  const currentUser = await checkAdministratorAccess(event);
 
   const id = getRouterParam(event, 'id');
   if (!id) {

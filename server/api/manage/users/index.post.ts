@@ -1,15 +1,14 @@
 import { UserRepositoryImpl } from '../../../../infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { CreateUser } from '../../../../application/user/useCases/CreateUser';
-import { JwtService } from '../../../../infrastructure/auth/jwtService';
 import { CreateUserInput } from '../../../../application/user/dto/CreateUserInput';
 import { UserType } from '../../../../domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 const createUserUseCase = new CreateUser(userRepository);
-const jwtService = new JwtService();
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -26,50 +25,21 @@ async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   return userCompanies[0].userType.toNumber();
 }
 
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
+async function checkAdministratorAccess(event: any) {
+  const user = await getCurrentUser(event);
+  const userType = await getUserTypeInAnyCompany(user.id);
+  if (!userType || userType !== UserType.ADMINISTRATOR) {
     throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
+      statusCode: 403,
+      statusMessage: 'Forbidden: Administrator access required',
     });
   }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    // UserCompanyからuserTypeを取得して管理者かチェック
-    const userType = await getUserTypeInAnyCompany(userId);
-    if (!userType || userType !== UserType.ADMINISTRATOR) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden: Administrator access required',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
+  return user;
 }
 
 export default defineEventHandler(async (event) => {
   // 管理者権限チェック
-  await getCurrentUser(event);
+  await checkAdministratorAccess(event);
 
   const body = await readBody(event);
 
@@ -79,7 +49,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

@@ -34,8 +34,6 @@ describe('useAuth', () => {
       const email = 'test@example.com';
       const password = 'password123';
       const mockResponse = {
-        accessToken: 'test-access-token',
-        refreshToken: 'test-refresh-token',
         user: {
           id: 'test-id',
           email: 'test@example.com',
@@ -49,8 +47,7 @@ describe('useAuth', () => {
 
       const store = useAuthStore();
       expect(store.user).toEqual(mockResponse.user);
-      expect(store.accessToken).toBe(mockResponse.accessToken);
-      expect(store.refreshToken).toBe(mockResponse.refreshToken);
+      // Supabaseセッション認証では、トークンはクッキーで管理されるため、ストアには保存されない
     });
 
     it('should handle login errors', async () => {
@@ -149,12 +146,11 @@ describe('useAuth', () => {
   });
 
   describe('isAuthenticated', () => {
-    it('should return true when user and accessToken are set', () => {
+    it('should return true when user is set', () => {
       const auth = useAuth();
       const store = useAuthStore();
       
       store.setUser({ id: 'test-id', email: 'test@example.com', name: 'Test' });
-      store.setTokens('test-token', 'refresh-token');
 
       expect(auth.isAuthenticated.value).toBe(true);
     });
@@ -164,17 +160,6 @@ describe('useAuth', () => {
       const store = useAuthStore();
       
       store.setUser(null);
-      store.setTokens('test-token', 'refresh-token');
-
-      expect(auth.isAuthenticated.value).toBe(false);
-    });
-
-    it('should return false when accessToken is null', () => {
-      const auth = useAuth();
-      const store = useAuthStore();
-      
-      store.setUser({ id: 'test-id', email: 'test@example.com', name: 'Test' });
-      store.setTokens(null, null);
 
       expect(auth.isAuthenticated.value).toBe(false);
     });

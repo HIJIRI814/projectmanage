@@ -1,47 +1,12 @@
 import { SheetMarkerRepositoryImpl } from '~/infrastructure/sheet/sheetMarkerRepositoryImpl';
 import { DeleteSheetMarker } from '~/application/sheet/useCases/DeleteSheetMarker';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { UserType } from '~/domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const sheetMarkerRepository = new SheetMarkerRepositoryImpl();
 const deleteSheetMarkerUseCase = new DeleteSheetMarker(sheetMarkerRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const jwtService = new JwtService();
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);

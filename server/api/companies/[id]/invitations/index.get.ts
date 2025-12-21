@@ -1,45 +1,10 @@
 import { CompanyInvitationRepositoryImpl } from '../../../../../infrastructure/company/companyInvitationRepositoryImpl';
 import { ListInvitations } from '../../../../../application/company/useCases/ListInvitations';
-import { JwtService } from '../../../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
 import { isAdministratorInCompany } from '../../../../utils/auth';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const invitationRepository = new CompanyInvitationRepositoryImpl();
 const listInvitationsUseCase = new ListInvitations(invitationRepository);
-const userRepository = new UserRepositoryImpl();
-const jwtService = new JwtService();
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);

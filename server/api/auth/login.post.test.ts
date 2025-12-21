@@ -1,32 +1,31 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LoginInput } from '~application/auth/dto/LoginInput';
-import { AuthResult } from '~application/auth/dto/AuthResult';
 
-// モジュール全体をモック
-const mockExecute = vi.fn();
-
-vi.mock('../../../application/auth/useCases/LoginUser', () => ({
-  LoginUser: class {
-    constructor(...args: any[]) {}
-    execute = mockExecute;
+// Supabaseクライアントをモック
+const mockSignInWithPassword = vi.fn();
+const mockSupabaseClient = {
+  auth: {
+    signInWithPassword: mockSignInWithPassword,
   },
+};
+
+const mockFindById = vi.fn();
+const mockFindByUserId = vi.fn();
+
+vi.mock('~/server/utils/supabase', () => ({
+  createServerSupabaseClient: vi.fn(() => mockSupabaseClient),
 }));
 
 vi.mock('../../../infrastructure/auth/userRepositoryImpl', () => ({
   UserRepositoryImpl: class {
     constructor() {}
+    findById = mockFindById;
   },
 }));
 
-vi.mock('../../../domain/user/service/AuthDomainService', () => ({
-  AuthDomainService: class {
+vi.mock('../../../infrastructure/user/userCompanyRepositoryImpl', () => ({
+  UserCompanyRepositoryImpl: class {
     constructor() {}
-  },
-}));
-
-vi.mock('../../../infrastructure/auth/jwtService', () => ({
-  JwtService: class {
-    constructor() {}
+    findByUserId = mockFindByUserId;
   },
 }));
 
@@ -37,8 +36,6 @@ const mockCreateError = globalThis.createError as any;
 describe('POST /api/auth/login', () => {
   let handler: any;
 
-  const accessToken = 'test-access-token';
-  const refreshToken = 'test-refresh-token';
   const user = {
     id: 'test-user-id',
     email: 'test@example.com',
@@ -47,33 +44,55 @@ describe('POST /api/auth/login', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockExecute.mockClear();
+    mockSignInWithPassword.mockClear();
+    mockFindById.mockClear();
+    mockFindByUserId.mockClear();
 
     // ハンドラーを動的にインポート
     const module = await import('./login.post');
     handler = module.default;
   });
 
-  it('should return tokens and user data for valid credentials', async () => {
+  it('should return user data for valid credentials', async () => {
     const body = {
       email: 'test@example.com',
       password: 'password123',
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockExecute.mockResolvedValue(
-      new AuthResult(accessToken, refreshToken, user)
-    );
+    mockSignInWithPassword.mockResolvedValue({
+      data: {
+        user: { id: user.id, email: user.email },
+        session: {
+          access_token: 'test-access-token',
+          refresh_token: 'test-refresh-token',
+        },
+      },
+      error: null,
+    });
+    mockFindById.mockResolvedValue({
+      id: user.id,
+      email: { toString: () => user.email },
+      name: user.name,
+    });
+    mockFindByUserId.mockResolvedValue([]);
 
     const event = {} as any;
     const result = await handler(event);
 
     expect(result).toEqual({
-      accessToken,
-      refreshToken,
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        userType: null,
+        userCompanies: [],
+      },
     });
-    expect(mockExecute).toHaveBeenCalledWith(expect.any(LoginInput));
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: body.email,
+      password: body.password,
+    });
   });
 
   it('should return 400 for validation errors - invalid email', async () => {
@@ -121,7 +140,10 @@ describe('POST /api/auth/login', () => {
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockExecute.mockRejectedValue(new Error('Invalid credentials'));
+    mockSignInWithPassword.mockResolvedValue({
+      data: { user: null, session: null },
+      error: { message: 'Invalid credentials' },
+    });
 
     const event = {} as any;
 
@@ -141,7 +163,7 @@ describe('POST /api/auth/login', () => {
     };
 
     mockReadBody.mockResolvedValue(body);
-    mockExecute.mockRejectedValue(new Error('Database error'));
+    mockSignInWithPassword.mockRejectedValue(new Error('Database error'));
 
     const event = {} as any;
 

@@ -3,7 +3,7 @@ import { SheetMarkerCommentRepositoryImpl } from '~/infrastructure/sheet/sheetMa
 import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { CreateSheetMarkerComment } from '~/application/sheet/useCases/CreateSheetMarkerComment';
 import { CreateSheetMarkerCommentInput } from '~/application/sheet/dto/CreateSheetMarkerCommentInput';
-import { JwtService } from '~/infrastructure/auth/jwtService';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const sheetMarkerRepository = new SheetMarkerRepositoryImpl();
@@ -14,44 +14,11 @@ const createSheetMarkerCommentUseCase = new CreateSheetMarkerComment(
   sheetMarkerCommentRepository,
   userRepository
 );
-const jwtService = new JwtService();
 
 const createSheetMarkerCommentSchema = z.object({
   content: z.string().min(1),
   parentCommentId: z.string().uuid().optional().nullable(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
@@ -72,7 +39,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

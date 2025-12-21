@@ -2,18 +2,15 @@ import { SheetMarkerRepositoryImpl } from '~/infrastructure/sheet/sheetMarkerRep
 import { SheetRepositoryImpl } from '~/infrastructure/sheet/sheetRepositoryImpl';
 import { CreateSheetMarker } from '~/application/sheet/useCases/CreateSheetMarker';
 import { CreateSheetMarkerInput } from '~/application/sheet/dto/CreateSheetMarkerInput';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { UserType } from '~/domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const sheetMarkerRepository = new SheetMarkerRepositoryImpl();
 const sheetRepository = new SheetRepositoryImpl();
 const createSheetMarkerUseCase = new CreateSheetMarker(sheetMarkerRepository, sheetRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const jwtService = new JwtService();
 
 const createSheetMarkerSchema = z.object({
   type: z.enum(['number', 'square']),
@@ -23,38 +20,6 @@ const createSheetMarkerSchema = z.object({
   height: z.number().min(0).max(100).optional().nullable(),
   note: z.string().optional().nullable(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
@@ -112,12 +77,12 @@ export default defineEventHandler(async (event) => {
     const validationResult = createSheetMarkerSchema.safeParse(body);
     if (!validationResult.success) {
       // #region agent log
-      await fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'markers/index.post.ts:handler',message:'Validation failed',data:{errors:validationResult.error.errors,body},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      await fetch('http://127.0.0.1:7245/ingest/befb475b-e854-40df-ba29-979341b8a7a4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'markers/index.post.ts:handler',message:'Validation failed',data:{errors:validationResult.error.issues,body},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

@@ -1,52 +1,17 @@
 import { CompanyInvitationRepositoryImpl } from '../../../../../infrastructure/company/companyInvitationRepositoryImpl';
 import { CreateInvitation } from '../../../../../application/company/useCases/CreateInvitation';
 import { CreateInvitationInput } from '../../../../../application/company/dto/CreateInvitationInput';
-import { JwtService } from '../../../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
 import { isAdministratorInCompany } from '../../../../utils/auth';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const invitationRepository = new CompanyInvitationRepositoryImpl();
 const createInvitationUseCase = new CreateInvitation(invitationRepository);
-const userRepository = new UserRepositoryImpl();
-const jwtService = new JwtService();
 
 const createInvitationSchema = z.object({
   email: z.string().email('Invalid email format'),
   userType: z.number().int().min(1).max(4),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
@@ -76,7 +41,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

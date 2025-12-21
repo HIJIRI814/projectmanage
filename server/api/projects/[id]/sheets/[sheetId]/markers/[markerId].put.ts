@@ -1,17 +1,14 @@
 import { SheetMarkerRepositoryImpl } from '~/infrastructure/sheet/sheetMarkerRepositoryImpl';
 import { UpdateSheetMarker } from '~/application/sheet/useCases/UpdateSheetMarker';
 import { UpdateSheetMarkerInput } from '~/application/sheet/dto/UpdateSheetMarkerInput';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~/infrastructure/user/userCompanyRepositoryImpl';
 import { UserType } from '~/domain/user/model/UserType';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const sheetMarkerRepository = new SheetMarkerRepositoryImpl();
 const updateSheetMarkerUseCase = new UpdateSheetMarker(sheetMarkerRepository);
-const userRepository = new UserRepositoryImpl();
 const userCompanyRepository = new UserCompanyRepositoryImpl();
-const jwtService = new JwtService();
 
 const updateSheetMarkerSchema = z.object({
   x: z.number().min(0).max(100).optional().nullable(),
@@ -20,38 +17,6 @@ const updateSheetMarkerSchema = z.object({
   height: z.number().min(0).max(100).optional().nullable(),
   note: z.string().optional().nullable(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-    
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 async function getUserTypeInAnyCompany(userId: string): Promise<number | null> {
   const userCompanies = await userCompanyRepository.findByUserId(userId);
@@ -92,7 +57,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

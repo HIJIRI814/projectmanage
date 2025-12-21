@@ -1,53 +1,18 @@
 import { UserCompanyRepositoryImpl } from '../../../../../infrastructure/user/userCompanyRepositoryImpl';
 import { AddUserToCompany } from '../../../../../application/userCompany/useCases/AddUserToCompany';
-import { JwtService } from '../../../../../infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '../../../../../infrastructure/auth/userRepositoryImpl';
 import { AddUserToCompanyInput } from '../../../../../application/userCompany/dto/AddUserToCompanyInput';
 import { UserType } from '../../../../../domain/user/model/UserType';
 import { isAdministratorInCompany } from '../../../../utils/auth';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 import { z } from 'zod';
 
 const userCompanyRepository = new UserCompanyRepositoryImpl();
 const addUserToCompanyUseCase = new AddUserToCompany(userCompanyRepository);
-const userRepository = new UserRepositoryImpl();
-const jwtService = new JwtService();
 
 const addUserToCompanySchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   userType: z.number().int().min(1).max(4).optional(),
 });
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const currentUser = await getCurrentUser(event);
@@ -77,7 +42,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: validationResult.error.errors,
+        data: validationResult.error.issues,
       });
     }
 

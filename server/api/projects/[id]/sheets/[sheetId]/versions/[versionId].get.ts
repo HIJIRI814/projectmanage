@@ -1,44 +1,9 @@
 import { SheetVersionRepositoryImpl } from '~/infrastructure/sheet/sheetVersionRepositoryImpl';
 import { GetSheetVersion } from '~/application/sheet/useCases/GetSheetVersion';
-import { JwtService } from '~/infrastructure/auth/jwtService';
-import { UserRepositoryImpl } from '~/infrastructure/auth/userRepositoryImpl';
+import { getCurrentUser } from '~/server/utils/getCurrentUser';
 
 const sheetVersionRepository = new SheetVersionRepositoryImpl();
 const getSheetVersionUseCase = new GetSheetVersion(sheetVersionRepository);
-const userRepository = new UserRepositoryImpl();
-const jwtService = new JwtService();
-
-async function getCurrentUser(event: any) {
-  const accessTokenCookie = getCookie(event, 'accessToken');
-  if (!accessTokenCookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-
-  try {
-    const { userId } = jwtService.verifyAccessToken(accessTokenCookie);
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    return user;
-  } catch (error: any) {
-    if (error.statusCode) {
-      throw error;
-    }
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    });
-  }
-}
 
 export default defineEventHandler(async (event) => {
   await getCurrentUser(event); // 認証チェックのみ

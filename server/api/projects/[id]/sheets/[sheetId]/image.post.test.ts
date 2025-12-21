@@ -49,24 +49,43 @@ vi.mock('~/infrastructure/user/userCompanyRepositoryImpl', () => ({
   },
 }));
 
-vi.mock('~/infrastructure/auth/jwtService', () => ({
-  JwtService: class {
-    verifyAccessToken = mockVerifyAccessToken;
+// Supabaseクライアントをモック
+const mockGetSession = vi.fn();
+const mockSupabaseClient = {
+  auth: {
+    getSession: mockGetSession,
   },
+};
+
+vi.mock('~/server/utils/supabase', () => ({
+  createClientSupabaseClient: vi.fn(() => mockSupabaseClient),
+}));
+
+vi.mock('~/server/utils/getCurrentUser', () => ({
+  getCurrentUser: vi.fn(async () => ({
+    id: 'user-1',
+    email: { toString: () => 'test@example.com' },
+    name: 'Test User',
+  })),
 }));
 
 // グローバルモック
-const mockGetCookie = vi.fn();
 const mockReadMultipartFormData = vi.fn();
 const mockUseRuntimeConfig = vi.fn(() => ({
-  public: {},
+  public: {
+    sheetImageUploadDir: 'public/uploads/sheets',
+    sheetImageBaseUrl: '/uploads/sheets',
+  },
+  sheetImageUploadDir: 'public/uploads/sheets',
+  sheetImageBaseUrl: '/uploads/sheets',
 }));
 const mockGetRouterParam = vi.fn((event: any, key: string) => event?.params?.[key]);
+const mockGetHeader = vi.fn();
 
-globalThis.getCookie = mockGetCookie as any;
 globalThis.readMultipartFormData = mockReadMultipartFormData as any;
 globalThis.useRuntimeConfig = mockUseRuntimeConfig as any;
 globalThis.getRouterParam = mockGetRouterParam as any;
+globalThis.getHeader = mockGetHeader as any;
 
 describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
   let handler: any;
@@ -75,10 +94,13 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockGetCookie.mockReturnValue('access-token');
-    mockVerifyAccessToken.mockReturnValue({ userId: 'user-1' });
-    mockFindUserById.mockResolvedValue({
-      id: 'user-1',
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: 'user-1' },
+        },
+      },
+      error: null,
     });
     mockFindByUserId.mockResolvedValue([
       {
@@ -92,6 +114,7 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
     ]);
     mockMkdir.mockResolvedValue(undefined);
     mockWriteFile.mockResolvedValue(undefined);
+    mockGetHeader.mockReturnValue('multipart/form-data');
 
     const sheet = Sheet.create(sheetId, projectId, 'Sheet', null, null, null);
     mockFindById.mockResolvedValue(sheet);
