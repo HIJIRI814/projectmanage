@@ -138,6 +138,7 @@ flowchart TD
 - シート情報の表示
 - 画像の表示
 - マーカーの表示（読み取り専用）
+- マーカーへのコメント機能（コメント投稿・リプライ、1階層まで）
 - バージョン管理（バージョン一覧、選択、復元）
 - シートの削除（管理者・メンバーのみ）
 - シート編集へのリンク（管理者・メンバーのみ）
@@ -154,8 +155,10 @@ flowchart TD
     CheckImage -->|"あり"| LoadImage["画像読み込み"]
     LoadImage --> GetMarkers["GET /api/projects/:id/sheets/:sheetId/markers<br/>マーカー一覧取得"]
     GetMarkers --> DisplayMarkers["マーカー表示<br/>番号/四角タイプ"]
+    DisplayMarkers --> GetComments["各マーカーのコメント取得<br/>GET /api/projects/:id/sheets/:sheetId/markers/:markerId/comments"]
+    GetComments --> DisplayComments["コメント表示<br/>階層構造（コメント+リプライ）"]
     CheckImage -->|"なし"| DisplayContent["内容表示"]
-    DisplayMarkers --> DisplayContent
+    DisplayComments --> DisplayContent
     
     DisplayContent --> Action{"ユーザー操作"}
     
@@ -169,6 +172,12 @@ flowchart TD
     
     Action -->|"バージョン復元"| RestoreVersion["POST /api/projects/:id/sheets/:sheetId/versions/:versionId/restore<br/>バージョンでシートを復元"]
     RestoreVersion --> RefreshSheet["シート情報再取得"]
+    
+    Action -->|"コメント投稿"| PostComment["POST /api/projects/:id/sheets/:sheetId/markers/:markerId/comments<br/>コメント投稿"]
+    PostComment --> RefreshComments["コメント一覧再取得"]
+    
+    Action -->|"リプライ投稿"| PostReply["POST /api/projects/:id/sheets/:sheetId/markers/:markerId/comments<br/>リプライ投稿（parentCommentId指定）"]
+    PostReply --> RefreshComments
     
     Action -->|"編集"| Edit["編集ページへ遷移"]
     Action -->|"削除"| Confirm["確認ダイアログ"]
@@ -268,6 +277,57 @@ flowchart TD
 
 シートを削除
 
+#### GET /api/projects/:id/sheets/:sheetId/markers/:markerId/comments
+
+マーカーのコメント一覧を取得（階層構造で返却）
+
+**レスポンス**:
+```json
+[
+  {
+    "id": "comment_id",
+    "markerId": "marker_id",
+    "userId": "user_id",
+    "userName": "ユーザー名",
+    "parentCommentId": null,
+    "content": "コメント内容",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "replies": [
+      {
+        "id": "reply_id",
+        "markerId": "marker_id",
+        "userId": "user_id",
+        "userName": "ユーザー名",
+        "parentCommentId": "comment_id",
+        "content": "リプライ内容",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z",
+        "replies": []
+      }
+    ]
+  }
+]
+```
+
+#### POST /api/projects/:id/sheets/:sheetId/markers/:markerId/comments
+
+コメントまたはリプライを投稿
+
+**リクエスト**:
+```json
+{
+  "content": "コメント内容",
+  "parentCommentId": null  // リプライの場合は親コメントID、トップレベルコメントの場合はnull
+}
+```
+
+**レスポンス**: 作成されたコメント情報
+
+**制約**:
+- リプライにリプライはできない（`parentCommentId`が`null`でないコメントにはリプライ不可）
+- 認証済みユーザー全員がコメント投稿可能
+
 ### 権限・アクセス制御
 
 - 認証済みユーザーのみアクセス可能
@@ -295,12 +355,22 @@ flowchart TD
   - 四角タイプ: 四角形の枠線で表示
   - マーカーは登録順（作成日時順）でソート
   - マーカーにホバーするとハイライト表示
+- **コメント機能**:
+  - 各マーカーに対してコメントセクションを表示
+  - コメント一覧（階層構造: コメント + リプライ）
+  - コメント投稿フォーム
+  - リプライ投稿フォーム（トップレベルコメントのみ）
+  - リプライは「L」プレフィックス付きでインデント表示
+  - リプライにリプライは不可
 
 ### エラーハンドリング
 
 - シート取得失敗時はエラーメッセージを表示
 - バージョン取得失敗時はコンソールにエラーを出力
 - マーカー取得失敗時はコンソールにエラーを出力
+- コメント取得失敗時はコンソールにエラーを出力
+- コメント投稿失敗時はアラートでエラーメッセージを表示
+- リプライ投稿失敗時はアラートでエラーメッセージを表示
 - バージョン保存失敗時はアラートでエラーメッセージを表示
 - バージョン復元失敗時はアラートでエラーメッセージを表示
 - 削除失敗時はアラートでエラーメッセージを表示
@@ -317,6 +387,11 @@ flowchart TD
 - **マーカーテーブル**:
   - 番号タイプのマーカーのみをテーブル形式で表示
   - 番号とメモを表示（読み取り専用）
+- **マーカーコメント**:
+  - 各マーカーに対してコメントを投稿可能
+  - コメントに対して1階層のリプライが可能（リプライにリプライは不可）
+  - コメントは階層構造で表示（コメント → リプライ）
+  - 認証済みユーザー全員がコメント投稿可能
 
 ### バージョン管理
 

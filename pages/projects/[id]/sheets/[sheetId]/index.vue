@@ -72,6 +72,67 @@
               </tbody>
             </table>
           </div>
+          <div v-if="tableMarkers.length > 0" class="markers-comments">
+            <h3>コメント</h3>
+            <div v-for="marker in tableMarkers" :key="marker.id" class="marker-comments-section">
+              <div class="marker-comments-header">
+                <strong>{{ getMarkerNumber(marker) }}のコメント</strong>
+              </div>
+              <div class="comments-list">
+                <div v-for="comment in markerComments[marker.id] || []" :key="comment.id" class="comment-item">
+                  <div class="comment-content">
+                    <div class="comment-header">
+                      <span class="comment-author">{{ comment.userName }}</span>
+                      <span class="comment-date">{{ formatDate(comment.createdAt) }}</span>
+                    </div>
+                    <div class="comment-text">{{ comment.content }}</div>
+                    <button
+                      v-if="!comment.parentCommentId"
+                      @click="showReplyForm(marker.id, comment.id)"
+                      class="reply-button"
+                    >
+                      リプライ
+                    </button>
+                    <div v-if="replyingTo[marker.id] === comment.id" class="reply-form">
+                      <textarea
+                        v-model="replyTexts[`${marker.id}-${comment.id}`]"
+                        placeholder="リプライを入力..."
+                        class="reply-textarea"
+                      />
+                      <div class="reply-actions">
+                        <button @click="submitReply(marker.id, comment.id)" class="submit-reply-button">
+                          投稿
+                        </button>
+                        <button @click="cancelReply(marker.id)" class="cancel-reply-button">
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
+                    <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+                      <div class="comment-header">
+                        <span class="reply-prefix">L</span>
+                        <span class="comment-author">{{ reply.userName }}</span>
+                        <span class="comment-date">{{ formatDate(reply.createdAt) }}</span>
+                      </div>
+                      <div class="comment-text">{{ reply.content }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="comment-form">
+                <textarea
+                  v-model="commentTexts[marker.id]"
+                  placeholder="コメントを入力..."
+                  class="comment-textarea"
+                />
+                <button @click="submitComment(marker.id)" class="submit-comment-button">
+                  コメント投稿
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="info-item">
           <label>作成日:</label>
@@ -179,6 +240,10 @@ const isLoadingVersions = ref(false);
 const selectedMarkerType = ref<'number' | 'square'>('number');
 const markers = ref<any[]>([]);
 const markerNotes = ref<Record<string, string>>({});
+const markerComments = ref<Record<string, any[]>>({});
+const commentTexts = ref<Record<string, string>>({});
+const replyTexts = ref<Record<string, string>>({});
+const replyingTo = ref<Record<string, string | null>>({});
 const imageRef = ref<HTMLImageElement | null>(null);
 const imageWrapperRef = ref<HTMLDivElement | null>(null);
 const isDragging = ref(false);
@@ -251,8 +316,80 @@ const loadMarkers = async () => {
     markersData.forEach((marker: any) => {
       markerNotes.value[marker.id] = marker.note || '';
     });
+    await loadCommentsForMarkers();
   } catch (err: any) {
     console.error('Failed to load markers:', err);
+  }
+};
+
+const loadCommentsForMarkers = async () => {
+  try {
+    const { apiFetch } = useApi();
+    for (const marker of tableMarkers.value) {
+      try {
+        const comments = await apiFetch(
+          `/api/projects/${projectId}/sheets/${sheetId}/markers/${marker.id}/comments`
+        );
+        markerComments.value[marker.id] = comments;
+      } catch (err: any) {
+        console.error(`Failed to load comments for marker ${marker.id}:`, err);
+        markerComments.value[marker.id] = [];
+      }
+    }
+  } catch (err: any) {
+    console.error('Failed to load comments:', err);
+  }
+};
+
+const submitComment = async (markerId: string) => {
+  const content = commentTexts.value[markerId]?.trim();
+  if (!content) return;
+
+  try {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${markerId}/comments`, {
+      method: 'POST',
+      body: {
+        content,
+        parentCommentId: null,
+      },
+    });
+    commentTexts.value[markerId] = '';
+    await loadCommentsForMarkers();
+  } catch (err: any) {
+    console.error('Failed to submit comment:', err);
+    alert('コメントの投稿に失敗しました');
+  }
+};
+
+const showReplyForm = (markerId: string, commentId: string) => {
+  replyingTo.value[markerId] = commentId;
+  replyTexts.value[`${markerId}-${commentId}`] = '';
+};
+
+const cancelReply = (markerId: string) => {
+  replyingTo.value[markerId] = null;
+};
+
+const submitReply = async (markerId: string, parentCommentId: string) => {
+  const content = replyTexts.value[`${markerId}-${parentCommentId}`]?.trim();
+  if (!content) return;
+
+  try {
+    const { apiFetch } = useApi();
+    await apiFetch(`/api/projects/${projectId}/sheets/${sheetId}/markers/${markerId}/comments`, {
+      method: 'POST',
+      body: {
+        content,
+        parentCommentId,
+      },
+    });
+    replyTexts.value[`${markerId}-${parentCommentId}`] = '';
+    replyingTo.value[markerId] = null;
+    await loadCommentsForMarkers();
+  } catch (err: any) {
+    console.error('Failed to submit reply:', err);
+    alert('リプライの投稿に失敗しました');
   }
 };
 
@@ -894,6 +1031,212 @@ h1 {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.markers-comments {
+  margin-top: 24px;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.markers-comments h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.marker-comments-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.marker-comments-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.marker-comments-header {
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: #4a5568;
+}
+
+.comments-list {
+  margin-bottom: 16px;
+}
+
+.comment-item {
+  margin-bottom: 16px;
+}
+
+.comment-content {
+  padding: 12px;
+  background-color: #f7fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.comment-date {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.comment-text {
+  color: #4a5568;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.reply-button {
+  padding: 4px 12px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.reply-button:hover {
+  background-color: #5a67d8;
+}
+
+.reply-form {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.reply-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.reply-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.submit-reply-button,
+.cancel-reply-button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-reply-button {
+  background-color: #667eea;
+  color: white;
+}
+
+.submit-reply-button:hover {
+  background-color: #5a67d8;
+}
+
+.cancel-reply-button {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.cancel-reply-button:hover {
+  background-color: #cbd5e0;
+}
+
+.replies-list {
+  margin-left: 24px;
+  margin-top: 12px;
+  padding-left: 16px;
+  border-left: 2px solid #e2e8f0;
+}
+
+.reply-item {
+  margin-bottom: 12px;
+  padding: 8px;
+  background-color: #f7fafc;
+  border-radius: 4px;
+}
+
+.reply-prefix {
+  font-weight: bold;
+  color: #667eea;
+  margin-right: 8px;
+}
+
+.comment-form {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f7fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.submit-comment-button {
+  padding: 10px 20px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-comment-button:hover {
+  background-color: #5a67d8;
 }
 
 .markers-table table {

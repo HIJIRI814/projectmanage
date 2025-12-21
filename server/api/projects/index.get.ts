@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
       const isMember = await isProjectMember(currentUser.id, project.id);
       const canAccess = await projectAccessService.canAccess(projectEntity, currentUser.id, isMember);
       
-      console.log(`[Projects API] Project ${project.id}: visibility=${projectEntity.visibility.toString()}, isMember=${isMember}, canAccess=${canAccess}, companyIds=${projectEntity.companyIds.join(',')}`);
+      console.log(`[Projects API] Project ${project.id}: visibility=${projectEntity.visibility.toString()}, isMember=${isMember}, canAccess=${canAccess}, companyIds=${projectEntity.companyIds.length > 0 ? projectEntity.companyIds.join(',') : 'none'}`);
 
       if (canAccess) {
         accessibleProjects.push(project);

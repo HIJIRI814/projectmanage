@@ -18,8 +18,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  projectMembers ProjectMember[]
-  userCompanies  UserCompany[]
+  projectMembers      ProjectMember[]
+  userCompanies       UserCompany[]
+  sheetMarkerComments SheetMarkerComment[]
 
   @@map("users")
 }
@@ -105,10 +106,28 @@ model SheetMarker {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  sheet        Sheet         @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-  sheetVersion SheetVersion? @relation(fields: [sheetVersionId], references: [id], onDelete: Cascade)
+  sheet        Sheet                @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetVersion SheetVersion?       @relation(fields: [sheetVersionId], references: [id], onDelete: Cascade)
+  comments     SheetMarkerComment[]
 
   @@map("sheet_markers")
+}
+
+model SheetMarkerComment {
+  id              String   @id @default(uuid())
+  markerId        String
+  userId          String
+  parentCommentId String?
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  marker        SheetMarker        @relation(fields: [markerId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment SheetMarkerComment? @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies       SheetMarkerComment[] @relation("CommentReplies")
+
+  @@map("sheet_marker_comments")
 }
 
 enum InvitationStatus {

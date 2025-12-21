@@ -18,3 +18,6 @@ ALTER TABLE "company_partnerships" ADD CONSTRAINT "company_partnerships_companyI
 ALTER TABLE "company_partnerships" ADD CONSTRAINT "company_partnerships_companyId2_fkey" FOREIGN KEY ("companyId2") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
+
+
+
