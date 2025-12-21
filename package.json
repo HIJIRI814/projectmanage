@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:sync-supabase": "tsx scripts/sync-users-to-supabase.ts",
+    "db:check-supabase": "tsx scripts/check-supabase.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"

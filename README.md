@@ -51,13 +51,29 @@ npm install
 
 ```env
 # Database
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public"
+# ローカル開発用
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nuxt_app?schema=public"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/nuxt_app?schema=public"
+
+# Supabase (Production) - Vercel等のサーバーレス環境
+# DATABASE_URL: 接続プーリング用（Supabaseダッシュボードの「Session mode」から取得）
+# DIRECT_URL: 通常の接続（Supabaseダッシュボードの「Transaction mode」から取得、マイグレーション用）
+# DATABASE_URL="postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&schema=public"
+# DIRECT_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public"
 
 # Supabase
 SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
 SUPABASE_ANON_KEY="your-anon-key"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
+
+**接続プーリング用の接続文字列の取得方法：**
+1. Supabaseダッシュボードにアクセス
+2. 「Settings」→「Database」に移動
+3. 「Connection string」セクションで以下を取得：
+   - **DATABASE_URL**: 「Session mode」を選択 → 「Connection pooling」の接続文字列をコピー
+   - **DIRECT_URL**: 「Transaction mode」を選択 → 通常の接続文字列をコピー
+4. 両方の接続文字列で`[YOUR-PASSWORD]`を実際のデータベースパスワードに置き換え
 
 ### 5. データベースマイグレーション
 
@@ -315,10 +331,17 @@ Playwright MCPを使用してE2Eテストを実行できます。
    - Build Command: `npm run build`
    - Output Directory: `.output`
 4. 環境変数を設定：
-   - `DATABASE_URL`: SupabaseのPostgreSQL接続文字列
+   - `DATABASE_URL`: Supabaseの接続プーリング用PostgreSQL接続文字列（Session mode推奨）
+     - Supabaseダッシュボードの「Settings」→「Database」→「Connection string」→「Session mode」から取得
+     - 接続プーリング用の接続文字列をそのまま使用（Supabaseダッシュボードから直接コピー推奨）
+   - `DIRECT_URL`: Supabaseの通常接続用PostgreSQL接続文字列（Transaction mode）
+     - Supabaseダッシュボードの「Settings」→「Database」→「Connection string」→「Transaction mode」から取得
+     - マイグレーション実行時に使用（Prismaの`directUrl`として使用）
    - `SUPABASE_URL`: SupabaseプロジェクトURL
    - `SUPABASE_ANON_KEY`: Supabase Anon key
    - `SUPABASE_SERVICE_ROLE_KEY`: Supabase Service role key
+   - `JWT_ACCESS_SECRET`: JWTアクセストークンのシークレット（32文字以上のランダム文字列）
+   - `JWT_REFRESH_SECRET`: JWTリフレッシュトークンのシークレット（32文字以上のランダム文字列）
 5. デプロイを実行
 
 ### 注意事項

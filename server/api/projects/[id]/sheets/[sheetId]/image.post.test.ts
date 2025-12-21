@@ -11,24 +11,8 @@ const mockSave = vi.fn();
 const mockFindUserById = vi.fn();
 const mockFindByUserId = vi.fn();
 const mockVerifyAccessToken = vi.fn();
-const mockMkdir = vi.fn();
-const mockWriteFile = vi.fn();
-const mockAppendFile = vi.fn().mockResolvedValue(undefined);
-
-vi.mock('fs', () => ({
-  default: {
-    promises: {
-      mkdir: mockMkdir,
-      writeFile: mockWriteFile,
-      appendFile: mockAppendFile,
-    },
-  },
-  promises: {
-    mkdir: mockMkdir,
-    writeFile: mockWriteFile,
-    appendFile: mockAppendFile,
-  },
-}));
+const mockUpload = vi.fn();
+const mockGetPublicUrl = vi.fn();
 
 vi.mock('~/infrastructure/sheet/sheetRepositoryImpl', () => ({
   SheetRepositoryImpl: class {
@@ -51,14 +35,21 @@ vi.mock('~/infrastructure/user/userCompanyRepositoryImpl', () => ({
 
 // Supabaseクライアントをモック
 const mockGetSession = vi.fn();
+const mockStorageFrom = vi.fn(() => ({
+  upload: mockUpload,
+  getPublicUrl: mockGetPublicUrl,
+}));
 const mockSupabaseClient = {
   auth: {
     getSession: mockGetSession,
   },
+  storage: {
+    from: mockStorageFrom,
+  },
 };
 
 vi.mock('~/server/utils/supabase', () => ({
-  createClientSupabaseClient: vi.fn(() => mockSupabaseClient),
+  createServerSupabaseClient: vi.fn(() => mockSupabaseClient),
 }));
 
 vi.mock('~/server/utils/getCurrentUser', () => ({
@@ -82,10 +73,14 @@ const mockUseRuntimeConfig = vi.fn(() => ({
 const mockGetRouterParam = vi.fn((event: any, key: string) => event?.params?.[key]);
 const mockGetHeader = vi.fn();
 
-globalThis.readMultipartFormData = mockReadMultipartFormData as any;
-globalThis.useRuntimeConfig = mockUseRuntimeConfig as any;
-globalThis.getRouterParam = mockGetRouterParam as any;
-globalThis.getHeader = mockGetHeader as any;
+// @ts-ignore
+globalThis.readMultipartFormData = mockReadMultipartFormData;
+// @ts-ignore
+globalThis.useRuntimeConfig = mockUseRuntimeConfig;
+// @ts-ignore
+globalThis.getRouterParam = mockGetRouterParam;
+// @ts-ignore
+globalThis.getHeader = mockGetHeader;
 
 describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
   let handler: any;
@@ -112,8 +107,10 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
         },
       },
     ]);
-    mockMkdir.mockResolvedValue(undefined);
-    mockWriteFile.mockResolvedValue(undefined);
+    mockUpload.mockResolvedValue({ data: {}, error: null });
+    mockGetPublicUrl.mockReturnValue({
+      data: { publicUrl: 'https://example.com/sheets/sheet-1/mock-uuid.png' },
+    });
     mockGetHeader.mockReturnValue('multipart/form-data');
 
     const sheet = Sheet.create(sheetId, projectId, 'Sheet', null, null, null);
@@ -141,7 +138,7 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
       'Sheet',
       null,
       null,
-      '/uploads/sheets/mock-uuid.png',
+      'https://example.com/sheets/sheet-1/mock-uuid.png',
       new Date('2024-01-01'),
       new Date('2024-01-02')
     );
@@ -155,10 +152,10 @@ describe('POST /api/projects/:id/sheets/:sheetId/image', () => {
 
     const result = await handler(event);
 
-    expect(mockMkdir).toHaveBeenCalled();
-    expect(mockWriteFile).toHaveBeenCalled();
+    expect(mockUpload).toHaveBeenCalled();
+    expect(mockGetPublicUrl).toHaveBeenCalled();
     expect(mockSave).toHaveBeenCalled();
-    expect(result.imageUrl).toBe('/uploads/sheets/mock-uuid.png');
+    expect(result.imageUrl).toBe('https://example.com/sheets/sheet-1/mock-uuid.png');
   });
 
   it('should reject unsupported file type', async () => {
