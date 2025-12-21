@@ -6,7 +6,7 @@ Nuxt 3 + Prisma + PostgreSQL を使用した認証機能付きアプリケーシ
 
 ## 主な機能
 
-- **認証・認可**: JWT ベースの認証システム
+- **認証・認可**: Supabase Auth ベースの認証システム
 - **会社管理**: 複数の会社を作成・管理可能
 - **ユーザー管理**: ユーザーは複数の会社に所属でき、会社ごとに異なる権限（管理者・メンバー・パートナー・顧客）を持つ
 - **会社間パートナーシップ**: 会社間の連携関係を管理
@@ -22,25 +22,52 @@ Nuxt 3 + Prisma + PostgreSQL を使用した認証機能付きアプリケーシ
 
 ## セットアップ
 
-### 1. 依存関係のインストール
+### 1. Supabaseプロジェクトの作成
+
+1. [Supabase](https://supabase.com/)にアクセスしてアカウントを作成
+2. 新しいプロジェクトを作成
+3. プロジェクト設定から以下を取得：
+   - Project URL (`SUPABASE_URL`)
+   - Anon key (`SUPABASE_ANON_KEY`)
+   - Service role key (`SUPABASE_SERVICE_ROLE_KEY`)
+   - Database connection string (`DATABASE_URL`)
+
+### 2. Supabase Storageバケットの作成
+
+1. Supabaseダッシュボードで「Storage」に移動
+2. 新しいバケットを作成：
+   - バケット名: `sheets`
+   - 公開バケット: 有効（読み取りは公開、書き込みは認証済みユーザーのみ）
+
+### 3. 依存関係のインストール
 
 ```bash
 npm install
 ```
 
-### 2. Dockerでデータベースを起動
+### 4. 環境変数の設定
 
-```bash
-docker-compose up -d
+`.env`ファイルを作成し、以下の環境変数を設定：
+
+```env
+# Database
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public"
+
+# Supabase
+SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-### 3. データベースマイグレーション
+### 5. データベースマイグレーション
 
 ```bash
 npm run db:migrate
 ```
 
-### 4. テストデータの作成（オプション）
+**注意**: ローカル開発環境では、Docker Composeを使用してPostgreSQLを起動することも可能です。その場合は`.env`の`DATABASE_URL`をローカル接続文字列に変更してください。
+
+### 6. テストデータの作成（オプション）
 
 ```bash
 npm run db:seed
@@ -108,7 +135,7 @@ npm run db:seed
 - `rejected@example.com` - 拒否（会社2）
 - `expired@example.com` - 期限切れ（会社3）
 
-### 5. 開発サーバーの起動
+### 7. 開発サーバーの起動
 
 ```bash
 npm run dev
@@ -194,19 +221,37 @@ pages/           # ページコンポーネント
 `.env`ファイルに以下の環境変数を設定してください：
 
 ```
+# Database
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public"
+
+# Supabase
+SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```
+
+### ローカル開発環境
+
+ローカル開発環境でDocker Composeを使用する場合：
+
+```bash
+docker-compose up -d
+```
+
+その後、`.env`の`DATABASE_URL`をローカル接続文字列に変更：
+
+```
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nuxt_app?schema=public"
-JWT_ACCESS_SECRET="your-access-secret-key"
-JWT_REFRESH_SECRET="your-refresh-secret-key"
 ```
 
 ## 技術スタック
 
 - **Nuxt 3** - Vue.jsフレームワーク
 - **Prisma** - ORM
-- **PostgreSQL** - データベース
+- **PostgreSQL** - データベース（Supabase）
+- **Supabase Auth** - 認証システム
+- **Supabase Storage** - ファイルストレージ
 - **Pinia** - 状態管理
-- **JWT** - 認証トークン
-- **bcrypt** - パスワードハッシュ化
 - **zod** - バリデーション
 - **Vitest** - テストフレームワーク
 - **Playwright** - E2Eテスト
@@ -258,3 +303,26 @@ Playwright MCPを使用してE2Eテストを実行できます。
 - **PRIVATE**: プロジェクトメンバーのみ閲覧可能
 - **COMPANY_INTERNAL**: 関連付けられた会社の管理者・メンバーが閲覧可能
 - **PUBLIC**: 全てのユーザーが閲覧可能
+
+## デプロイ
+
+### Vercelへのデプロイ
+
+1. [Vercel](https://vercel.com/)にアクセスしてアカウントを作成
+2. GitHubリポジトリをVercelに接続
+3. プロジェクト設定で以下を確認：
+   - Framework Preset: `Nuxt.js`
+   - Build Command: `npm run build`
+   - Output Directory: `.output`
+4. 環境変数を設定：
+   - `DATABASE_URL`: SupabaseのPostgreSQL接続文字列
+   - `SUPABASE_URL`: SupabaseプロジェクトURL
+   - `SUPABASE_ANON_KEY`: Supabase Anon key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Supabase Service role key
+5. デプロイを実行
+
+### 注意事項
+
+- Supabase Storageバケット`sheets`が作成されていることを確認
+- 環境変数が正しく設定されていることを確認
+- データベースマイグレーションはSupabaseのSQL Editorから実行するか、Vercelのビルド時に実行するように設定

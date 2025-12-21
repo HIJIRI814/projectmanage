@@ -23,5 +23,4 @@ CREATE UNIQUE INDEX "company_invitations_token_key" ON "company_invitations"("to
 -- CreateIndex
 CREATE UNIQUE INDEX "company_invitations_companyId_email_status_key" ON "company_invitations"("companyId", "email", "status");
 
--- AddForeignKey
-ALTER TABLE "company_invitations" ADD CONSTRAINT "company_invitations_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Note: Foreign key constraint will be added in the next migration after companies table is created

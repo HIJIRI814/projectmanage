@@ -26,3 +26,5 @@ logs
 public/uploads/
 
 .playwright*/
+.vercel
+supabase/

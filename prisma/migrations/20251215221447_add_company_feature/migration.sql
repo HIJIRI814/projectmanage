@@ -54,6 +54,9 @@ ALTER TABLE "project_companies" ADD CONSTRAINT "project_companies_projectId_fkey
 -- AddForeignKey
 ALTER TABLE "project_companies" ADD CONSTRAINT "project_companies_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey for company_invitations (created in previous migration)
+ALTER TABLE "company_invitations" ADD CONSTRAINT "company_invitations_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- 既存データの移行: デフォルト会社を作成
 INSERT INTO "companies" ("id", "name", "createdAt", "updatedAt")
 SELECT gen_random_uuid()::text, 'デフォルト会社', NOW(), NOW()
