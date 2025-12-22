@@ -21,3 +21,4 @@ ALTER TABLE "company_partnerships" ADD CONSTRAINT "company_partnerships_companyI
 
 
 
+
