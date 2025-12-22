@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '~/server/utils/supabase';
+import { createClientSupabaseClient } from '~/server/utils/supabase';
 import { UserRepositoryImpl } from '~infrastructure/auth/userRepositoryImpl';
 import { UserCompanyRepositoryImpl } from '~infrastructure/user/userCompanyRepositoryImpl';
 import { User } from '~domain/user/model/User';
@@ -29,8 +29,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Supabaseクライアントの作成
-    const supabase = createServerSupabaseClient(event);
+    // Supabaseクライアントの作成（ユーザー認証にはANON_KEYを使用）
+    const supabase = createClientSupabaseClient(event);
     
     // Supabaseでログイン
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
