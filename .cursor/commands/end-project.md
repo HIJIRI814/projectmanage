@@ -34,5 +34,3 @@ docker-compose down && lsof -ti:5555 | xargs kill -9 2>/dev/null || true && lsof
 - プロセスが既に終了している場合でもエラーにはなりません（`|| true`でエラーを無視）
 - データベースのデータは保持されます（`docker-compose down`はコンテナのみを停止）
 - データベースのデータも削除したい場合は `docker-compose down -v` を使用してください
-
-This command will be available in chat with /end-project

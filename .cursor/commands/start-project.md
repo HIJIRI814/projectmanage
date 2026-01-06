@@ -35,5 +35,3 @@ docker-compose up -d && npm run db:studio & npm run dev &
 - Prisma Studioは通常 `http://localhost:5555` で起動します
 - Nuxt開発サーバーは通常 `http://localhost:3000` で起動します
 - バックグラウンドで実行したプロセスは、`/end-project` コマンドで終了できます
-
-This command will be available in chat with /start-project

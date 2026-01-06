@@ -5,7 +5,15 @@ import { ProjectVisibility } from '../domain/project/model/ProjectVisibility';
 import { InvitationStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
+// シード実行時はDIRECT_URLを使用（接続プーリングを回避）
+const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: directUrl,
+    },
+  },
+});
 
 async function main() {
   console.log('🗑️  Deleting all existing records...');
